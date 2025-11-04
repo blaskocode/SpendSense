@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpendSense - Operator Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/operator.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 SpendSense Operator Dashboard</h1>
+            <p class="subtitle">System Management & Oversight</p>
+        </header>
+
+        <nav class="operator-nav">
+            <button class="nav-btn active" onclick="showTab('analytics')">Analytics</button>
+            <button class="nav-btn" onclick="showTab('approval')">Approval Queue</button>
+            <button class="nav-btn" onclick="showTab('review')">User Review</button>
+            <button class="nav-btn" onclick="showTab('feedback')">Feedback Review</button>
+            <button class="nav-btn" onclick="showTab('health')">System Health</button>
+        </nav>
+
+        <!-- Analytics Tab -->
+        <div id="analyticsTab" class="tab-content active">
+            <h2>📊 System Analytics</h2>
+            <button onclick="loadAnalytics()" class="refresh-btn">Refresh</button>
+            <div id="analyticsContent" class="loading">Loading analytics...</div>
+        </div>
+
+        <!-- Approval Queue Tab -->
+        <div id="approvalTab" class="tab-content">
+            <h2>✅ Approval Queue</h2>
+            <button onclick="loadApprovalQueue()" class="refresh-btn">Refresh</button>
+            <div id="approvalContent" class="loading">Loading approval queue...</div>
+        </div>
+
+        <!-- User Review Tab -->
+        <div id="reviewTab" class="tab-content">
+            <h2>👤 User Review</h2>
+            <div class="input-group">
+                <input type="text" id="reviewUserId" placeholder="Enter user ID" value="user_001">
+                <button onclick="loadUserReview()">Load User</button>
+            </div>
+            <div id="reviewContent" class="loading">Enter a user ID to review</div>
+        </div>
+
+        <!-- Feedback Review Tab -->
+        <div id="feedbackTab" class="tab-content">
+            <h2>💬 Feedback Review</h2>
+            <button onclick="loadFeedbackReview()" class="refresh-btn">Refresh</button>
+            <div id="feedbackContent" class="loading">Loading feedback...</div>
+        </div>
+
+        <!-- System Health Tab -->
+        <div id="healthTab" class="tab-content">
+            <h2>🏥 System Health</h2>
+            <button onclick="loadSystemHealth()" class="refresh-btn">Refresh</button>
+            <div id="healthContent" class="loading">Loading system health...</div>
+        </div>
+    </div>
+
+    <script src="/static/operator.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,208 @@
+---
+description: Enforce 750-line file limit with intelligent refactoring
+globs: **/*.{py,ts,tsx,js,jsx,java,go,rb,php}
+---
+
+# Rule: File Size Limit and Intelligent Refactoring
+
+// Description: Ensure all files do not exceed 750 lines with proactive refactoring
+// Recommended Globs: **/*.{py,ts,tsx,js,jsx,java,go,rb,php}
+
+## Purpose
+
+This rule ensures that all code files remain maintainable by enforcing a 750-line maximum and proactively refactoring files as they approach or exceed this limit.
+
+## Mandatory Requirement
+
+**ALL files must remain under 750 lines.**
+
+When creating or modifying files, continuously monitor line count and proactively refactor to maintain this limit.
+
+## Line Count Monitoring
+
+### Thresholds
+- **Green Zone:** < 500 lines - No action needed
+- **Yellow Zone:** 500-650 lines - Start planning refactoring
+- **Red Zone:** 650-750 lines - Refactoring required immediately
+- **Exceeded:** > 750 lines - MUST refactor before marking task complete
+
+### When to Check
+1. **Before creating a new file:** Estimate line count
+2. **During file modification:** Monitor as lines are added
+3. **After adding code:** Check if threshold is approaching
+4. **Before task completion:** Verify all files are under limit
+
+## Refactoring Strategy
+
+### Proactive Refactoring Approach
+
+When a file is approaching 750 lines, intelligently identify opportunities to extract functionality:
+
+#### 1. Extract Utility Functions
+- Move pure utility functions to separate utility modules
+- Create `utils/` or `helpers/` modules as needed
+- Group related utilities together
+
+#### 2. Extract Classes
+- Move large classes to their own files
+- Follow one-class-per-file principle (with exceptions for related small classes)
+- Create `models/`, `services/`, `components/` structure as appropriate
+
+#### 3. Extract Feature Modules
+- Split feature-specific logic into feature modules
+- Create `features/` or domain-specific directories
+- Maintain clear module boundaries
+
+#### 4. Extract Types/Interfaces
+- Move type definitions to separate `types.ts` or `types.py` files
+- Create `interfaces/` or `types/` directories for shared types
+- Keep type files focused and well-organized
+
+#### 5. Extract Constants/Configuration
+- Move constants and configuration to separate files
+- Create `constants.ts` or `config.py` files
+- Group related constants together
+
+### Refactoring Patterns
+
+#### Python Example
+```python
+# Before: Large file with mixed concerns
+# spendsense/features/signal_detector.py (800 lines)
+
+# After: Split into focused modules
+# spendsense/features/signals/
+#   ├── __init__.py
+#   ├── detector.py (main class, 200 lines)
+#   ├── subscriptions.py (subscription detection, 150 lines)
+#   ├── savings.py (savings signals, 150 lines)
+#   ├── credit.py (credit signals, 150 lines)
+#   └── income.py (income signals, 150 lines)
+```
+
+#### TypeScript/JavaScript Example
+```typescript
+// Before: Large component file
+// components/UserDashboard.tsx (800 lines)
+
+// After: Split into focused components
+// components/user-dashboard/
+//   ├── index.tsx (main component, 200 lines)
+//   ├── UserProfile.tsx (150 lines)
+//   ├── UserInsights.tsx (150 lines)
+//   ├── UserActions.tsx (150 lines)
+//   └── types.ts (type definitions, 50 lines)
+```
+
+## Refactoring Workflow
+
+### Step 1: Identify Extraction Opportunities
+When a file exceeds 650 lines:
+1. Analyze file structure and identify logical boundaries
+2. Look for:
+   - Groups of related functions
+   - Large classes with multiple responsibilities
+   - Repeated patterns that could be abstracted
+   - Type definitions that could be separated
+   - Constants that could be extracted
+
+### Step 2: Plan Extraction
+1. Determine what to extract and where
+2. Identify all dependencies and imports
+3. Plan the new file structure
+4. Ensure extracted code maintains single responsibility
+
+### Step 3: Perform Extraction
+1. Create new files for extracted functionality
+2. Move code to new files with proper imports
+3. Update original file to import from new modules
+4. Update all affected files
+
+### Step 4: Verify Refactoring
+1. **Check all affected files:**
+   - Original file (should be under 750 lines)
+   - New extracted files (should be under 750 lines)
+   - Any files that import from refactored code
+2. **Verify functionality:**
+   - Ensure imports are correct
+   - Verify no circular dependencies
+   - Check that tests still pass (if applicable)
+   - Ensure no broken references
+
+### Step 5: Update Documentation
+1. Update file structure documentation if needed
+2. Update import paths in documentation
+3. Document the refactoring in code comments if significant
+
+## Refactoring Checks
+
+### Before Marking Task Complete
+- [ ] All files are under 750 lines
+- [ ] No file exceeds 650 lines (red zone)
+- [ ] All extracted functionality is properly organized
+- [ ] All imports are correct and working
+- [ ] No circular dependencies introduced
+- [ ] Code structure follows project patterns
+- [ ] Related files are grouped logically
+
+### Affected Files Check
+When refactoring, always check:
+1. Original file being refactored
+2. All newly created files
+3. Files that import from refactored code
+4. Test files (if applicable)
+5. Documentation files (if applicable)
+
+## Best Practices
+
+### File Organization
+- Keep related functionality together
+- Follow project structure conventions
+- Maintain clear module boundaries
+- Use descriptive file names
+
+### Extraction Priorities
+1. **High Priority:** Large classes, complex functions
+2. **Medium Priority:** Utility functions, type definitions
+3. **Low Priority:** Constants, simple helpers
+
+### When NOT to Split
+- Small, cohesive files (< 500 lines)
+- Files where splitting would create artificial boundaries
+- Files where all code is tightly coupled and belongs together
+- Test files (unless they become unmanageable)
+
+## Example Workflow
+
+```
+1. User: "Add subscription detection to signal_detector.py"
+2. AI: Checks file size (currently 600 lines)
+3. AI: Adds subscription detection (now 720 lines)
+4. AI: Approaches red zone, proactively refactors:
+   - Extracts subscription logic to subscriptions.py
+   - Updates signal_detector.py to import from subscriptions.py
+   - Verifies both files are under 750 lines
+   - Checks all affected files
+5. AI: "Added subscription detection. Refactored to maintain file size limits.
+       Extracted subscription logic to subscriptions.py (120 lines).
+       signal_detector.py now at 350 lines. All files verified."
+```
+
+## Integration with Other Rules
+
+This rule works with:
+- **Python Development:** Follows Python module structure best practices
+- **Security Scanning:** Refactored code must still pass security scans
+- **Task Management:** Refactoring may create additional sub-tasks
+
+## Non-Compliance
+
+If a file exceeds 750 lines:
+1. **DO NOT** mark the task as complete
+2. **DO** immediately identify refactoring opportunities
+3. **DO** perform refactoring before proceeding
+4. **DO** verify all affected files are compliant
+
+## Remember
+
+**Maintainability over convenience. Smaller, focused files are easier to understand, test, and maintain.**

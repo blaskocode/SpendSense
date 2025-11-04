@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpendSense - Financial Insights</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 SpendSense</h1>
+            <p class="subtitle">Intelligent Behavioral Spending Trainer</p>
+        </header>
+
+        <div class="user-input-section">
+            <h2>Get Your Financial Insights</h2>
+            <div class="input-group">
+                <label for="userId">User ID:</label>
+                <input type="text" id="userId" placeholder="Enter user ID (e.g., user_001)" value="user_001">
+                <button id="loadBtn" onclick="loadUserData()">Load Dashboard</button>
+            </div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+        </div>
+
+        <div id="dashboard" class="dashboard" style="display: none;">
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="loading" style="display: none;">Loading user data</div>
+            
+            <!-- Consent Check -->
+            <div id="consentSection" class="section">
+                <div id="consentRequired" class="alert alert-warning" style="display: none;">
+                    <h3>⚠️ Consent Required</h3>
+                    <p>To view your personalized financial insights, please provide consent.</p>
+                    <button onclick="provideConsent()">Provide Consent</button>
+                </div>
+                <div id="consentGranted" class="alert alert-success" style="display: none;">
+                    <h3>✅ Consent Granted</h3>
+                    <p>You have provided consent for data processing and recommendations.</p>
+                    <button onclick="revokeConsent()">Revoke Consent</button>
+                </div>
+            </div>
+
+            <!-- Welcome Section -->
+            <div id="welcomeSection" class="section" style="display: none;">
+                <div class="welcome-card">
+                    <h2 id="welcomeMessage"></h2>
+                    <p id="personaInfo"></p>
+                </div>
+            </div>
+
+            <!-- Insights Card -->
+            <div id="insightsSection" class="section" style="display: none;">
+                <h2>📊 Your Top Behavioral Signals</h2>
+                <div id="insightsList" class="insights-grid"></div>
+            </div>
+
+            <!-- Your Plan (Education) -->
+            <div id="planSection" class="section" style="display: none;">
+                <h2>📚 Your Plan</h2>
+                <div id="educationList" class="recommendations-list"></div>
+            </div>
+
+            <!-- Partner Offers -->
+            <div id="offersSection" class="section" style="display: none;">
+                <h2>💼 Partner Offers</h2>
+                <div id="offersList" class="recommendations-list"></div>
+            </div>
+
+            <!-- Transactions -->
+            <div id="transactionsSection" class="section" style="display: none;">
+                <h2>💰 Recent Transactions</h2>
+                <div id="transactionsContainer">
+                    <div id="transactionsList" class="transactions-list"></div>
+                    <div id="transactionsPagination" class="pagination" style="display: none;">
+                        <button id="prevPageBtn" onclick="loadTransactions('prev')" disabled>← Previous</button>
+                        <span id="pageInfo">Page 1</span>
+                        <button id="nextPageBtn" onclick="loadTransactions('next')">Next →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Information -->
+            <div id="dataInfoSection" class="section" style="display: none;">
+                <div class="info-card">
+                    <p><strong>Data Availability:</strong> <span id="dataAvailability"></span></p>
+                    <p><strong>Last Updated:</strong> <span id="lastUpdated"></span></p>
+                </div>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="disclaimer">
+                <p>⚠️ <strong>Disclaimer:</strong> This is educational content, not financial advice. Consult a licensed financial advisor for personalized guidance.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
+

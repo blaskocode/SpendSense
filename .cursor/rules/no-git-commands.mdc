@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+---
+# Rule: No Git Commands
+
+// Description: Cursor should NEVER perform or suggest any git commands
+// Recommended Globs: **/*
+
+## Purpose
+
+This rule ensures that Cursor AI will NEVER execute or suggest any git commands, including commits, pushes, pulls, branches, or any other version control operations.
+
+## Mandatory Prohibition
+
+**NEVER perform or suggest git commands.**
+
+This includes but is not limited to:
+- `git add`
+- `git commit`
+- `git push`
+- `git pull`
+- `git branch`
+- `git checkout`
+- `git merge`
+- `git rebase`
+- `git status`
+- `git log`
+- `git diff`
+- `git reset`
+- `git stash`
+- Any other git commands or operations
+
+## When User Requests Git Operations
+
+If the user explicitly requests a git operation:
+1. Politely decline to execute the command
+2. Explain that git operations are outside the scope of assistance
+3. Suggest the user perform git operations manually
+4. Continue with other non-git tasks
+
+## Workflow Implications
+
+- Code changes can be made and files can be created/modified
+- Git operations should be left entirely to the user
+- No git commands in terminal output or suggestions
+- No git-related advice or recommendations
+
+## Rationale
+
+This rule ensures that version control decisions remain entirely in the user's hands, preventing accidental commits, pushes, or other git operations that could affect the repository state.

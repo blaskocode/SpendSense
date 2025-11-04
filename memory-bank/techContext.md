@@ -1,0 +1,221 @@
+# SpendSense Technical Context
+
+## Technology Stack
+
+### Backend
+- **Language:** Python 3.9+
+- **Framework:** FastAPI (implemented) ✅
+- **Database:** SQLite (built-in, no external dependency) ✅
+- **Analytics Storage:** Parquet (via PyArrow) ✅
+- **Data Processing:** Pandas, NumPy ✅
+
+### Frontend (Not Yet Implemented)
+- **Framework:** React or Vue.js (or static HTML+JS) - Optional
+- **Purpose:** User-facing dashboard and operator dashboard
+- **Status:** Backend API ready, frontend not built
+- **Alternative:** Swagger UI available for testing at `/docs`
+
+### Optional Components
+- **LLM Integration:** OpenAI API or Anthropic Claude (optional enhancement)
+- **Local LLM:** Could use local models if needed
+
+## Development Setup
+
+### Prerequisites
+- Python 3.9 or higher
+- pip (Python package manager)
+
+### Installation
+```bash
+pip install -r requirements.txt
+```
+
+### Dependencies (requirements.txt)
+- `pandas>=2.0.0` - Data processing
+- `numpy>=1.24.0` - Numerical operations
+- `pyarrow>=12.0.0` - Parquet support
+- `fastapi>=0.104.0` - API framework ✅ (implemented)
+- `uvicorn>=0.24.0` - ASGI server ✅ (implemented)
+- `python-dateutil>=2.8.2` - Date utilities
+- `pytest>=7.4.0` - Testing framework
+- `pytest-cov>=4.1.0` - Test coverage
+
+## Project Structure
+
+```
+SpendSense/
+├── spendsense/              # Main package
+│   ├── ingest/              # Data generation and loading
+│   │   ├── data_generator.py
+│   │   ├── loader.py
+│   │   ├── validator.py
+│   │   └── importer.py
+│   ├── storage/             # Database and Parquet handlers
+│   │   ├── sqlite_manager.py
+│   │   └── parquet_handler.py
+│   ├── features/            # Feature engineering (Phase 2) ✅
+│   ├── personas/            # Persona system (Phase 3) ✅
+│   ├── recommend/           # Recommendation engine (Phase 4) ✅
+│   ├── guardrails/          # Guardrails (Phase 5) ✅
+│   ├── ui/                  # User feedback (Phase 5) ✅
+│   ├── operator/            # Operator dashboard (Phase 6) ✅
+│   ├── eval/                # Evaluation (Phase 7) ✅
+│   ├── api/                 # REST API (Phase 8) ✅
+│   ├── utils/               # Utilities
+│   │   ├── config.py
+│   │   ├── logger.py
+│   │   └── errors.py
+│   └── tests/               # Test suite
+│       ├── unit/
+│       ├── integration/
+│       └── edge_cases/
+├── data/                    # Generated data
+│   ├── spendsense.db        # SQLite database
+│   └── parquet/             # Parquet files
+├── logs/                     # Application logs
+├── memory-bank/             # Memory bank documentation
+├── requirements.txt        # Python dependencies
+├── run.py                   # Setup and run script
+└── README.md                # Project documentation
+```
+
+## Configuration
+
+### Environment Variables
+- `NUM_USERS` - Number of synthetic users to generate (default: 75)
+- `SEED` - Random seed for reproducibility (default: 42)
+
+### Configuration Files
+- `spendsense/utils/config.py` - Centralized configuration
+- Database paths, parquet paths, logging setup
+
+## Database Schema
+
+### SQLite Tables
+1. **users** - User accounts with consent tracking
+2. **accounts** - Banking accounts (checking, savings, credit, etc.)
+3. **transactions** - All financial transactions
+4. **liabilities** - Credit card liabilities, loans
+5. **signals** - Cached behavioral signals
+6. **personas** - Persona assignments with decision traces
+7. **recommendations** - Generated recommendations
+8. **feedback** - User feedback on recommendations
+
+### Indexes
+- `transactions(account_id, date)` - Query optimization
+- `transactions(date)` - Window queries
+- `accounts(user_id)` - User account lookup
+- `signals(user_id, window_type)` - Signal retrieval
+- `personas(user_id)` - Persona lookup
+- `recommendations(user_id)` - User recommendations
+
+## Data Generation
+
+### Synthetic Data Characteristics
+- **Users:** 50-100 (configurable)
+- **Income Distribution:** 4 quartiles (Q1: $20-40k, Q2: $40-65k, Q3: $65-100k, Q4: $100-200k)
+- **Account Types:** Checking, Savings, Credit Card, Money Market, HSA
+- **Transaction History:** 210 days (180 + 30 day buffer)
+- **Realistic Variability:** Subscriptions, seasonality, life events, edge cases
+
+### Reproducibility
+- Deterministic random seed (default: 42)
+- All randomness seeded for consistent results
+- Same seed produces identical data
+
+## Development Constraints
+
+### Local-Only Deployment
+- No cloud dependencies
+- SQLite instead of PostgreSQL/MySQL
+- Local file storage instead of S3
+- No external authentication (basic operator auth only)
+
+### No Real Integrations
+- Synthetic data only (no real Plaid API)
+- No real credit checks or income verification
+- Educational content only (not financial advice)
+
+## API Design ✅ Implemented
+
+### REST Endpoints Structure (18 endpoints)
+- `/users` - User management (POST, GET)
+- `/users/consent` - Consent operations (POST, DELETE, GET)
+- `/data/profile/{user_id}` - Behavioral profile (GET)
+- `/data/recommendations/{user_id}` - Recommendations (GET)
+- `/data/feedback` - User feedback (POST)
+- `/operator/*` - Operator dashboard endpoints (6 endpoints)
+- `/eval/*` - Evaluation endpoints (3 endpoints)
+
+### API Implementation
+- ✅ FastAPI framework with automatic OpenAPI docs
+- ✅ Swagger UI at `/docs` for interactive testing
+- ✅ Pydantic models for type-safe validation
+- ✅ RESTful resource-oriented design
+- ✅ Stateless (no server-side sessions)
+- ✅ JSON request/response format
+- ✅ Standard HTTP methods (GET, POST, DELETE)
+- ✅ Global error handling
+- ✅ CORS enabled for local development
+
+## Testing Setup
+
+### Test Framework
+- **pytest** - Test runner
+- **pytest-cov** - Coverage reporting
+
+### Test Structure
+- **Unit Tests:** Individual function/class tests
+- **Integration Tests:** Multi-module workflow tests
+- **Edge Case Tests:** Boundary conditions
+- **Performance Tests:** Latency validation
+
+### Test Coverage ✅
+- ✅ 30+ total tests collected
+- ✅ 15+ unit tests
+- ✅ 4 integration tests
+- ✅ 4 edge case tests
+- ✅ 2 performance tests
+- ✅ Test suite in `spendsense/tests/`
+
+## Logging
+
+### Logging Setup
+- File-based logging in `logs/` directory
+- Console output for development
+- Structured format with timestamps
+- Per-module loggers
+
+### Log Levels
+- INFO - Normal operations
+- WARNING - Non-critical issues
+- ERROR - Errors requiring attention
+- DEBUG - Detailed debugging (when needed)
+
+## Deployment
+
+### Local Setup
+```bash
+python run.py --setup  # Initialize database and generate data ✅
+python run.py --start  # Start API server ✅
+```
+
+### Single-Command Setup ✅
+- ✅ Creates database schema
+- ✅ Generates synthetic data (100 users, 31,846 transactions)
+- ✅ Exports to Parquet
+- ✅ Starts REST API server on http://localhost:8000
+- ✅ Swagger UI available at http://localhost:8000/docs
+
+## Performance Targets
+- **Latency:** <5 seconds per user recommendation generation
+- **Database:** Indexed queries for fast lookups
+- **Caching:** 24-hour TTL for signal cache
+- **Batch Processing:** Daily window recalculation (not real-time)
+
+## Known Limitations
+- SQLite not suitable for high concurrency (local-only acceptable)
+- No real-time updates (daily recalculation)
+- Synthetic data may not cover all real-world edge cases
+- Local deployment only (not scalable to production)
+
