@@ -41,31 +41,73 @@ async function loadUserData() {
     try {
         // Check consent status
         const consentResponse = await fetch(`${API_BASE_URL}/users/consent/${userId}`);
+        
+        // Hide loading indicator
+        const loadingDiv = document.getElementById('loadingIndicator');
+        if (loadingDiv) loadingDiv.style.display = 'none';
+        
+        // Check if user doesn't exist (404 error)
+        if (consentResponse.status === 404) {
+            let errorMessage = `User "${userId}" does not exist.`;
+            try {
+                const errorData = await consentResponse.json();
+                if (errorData.detail) {
+                    errorMessage += ` ${errorData.detail}`;
+                }
+            } catch (e) {
+                // If JSON parsing fails, use default message
+            }
+            
+            showError(errorMessage);
+            
+            // Hide all dashboard sections
+            const sections = ['consentSection', 'welcomeSection', 'insightsSection', 'planSection', 'offersSection', 'dataInfoSection', 'subscriptionsSection', 'transactionsSection', 'aiConsentSection', 'aiPlanSection'];
+            sections.forEach(id => {
+                const section = document.getElementById(id);
+                if (section) section.style.display = 'none';
+            });
+            
+            return;
+        }
+        
+        // If response is not OK, throw error
+        if (!consentResponse.ok) {
+            throw new Error(`Failed to check consent: ${consentResponse.status}`);
+        }
+        
+        // Parse consent data (only if response is OK)
         const consentData = await consentResponse.json();
         
-    // Hide loading indicator
-    const loadingDiv = document.getElementById('loadingIndicator');
-    if (loadingDiv) loadingDiv.style.display = 'none';
-    
-    const consentSection = document.getElementById('consentSection');
-    const consentRequired = document.getElementById('consentRequired');
-    const consentGranted = document.getElementById('consentGranted');
-    const welcomeSection = document.getElementById('welcomeSection');
-    
-    if (!consentData.consent_status) {
-        // Show consent required message
+        const consentSection = document.getElementById('consentSection');
+        const consentRequired = document.getElementById('consentRequired');
+        const consentGranted = document.getElementById('consentGranted');
+        const welcomeSection = document.getElementById('welcomeSection');
+        
+        if (!consentData.consent_status) {
+        // Show ONLY consent required message - hide everything else
         if (consentSection) consentSection.style.display = 'block';
         if (consentRequired) consentRequired.style.display = 'block';
         if (consentGranted) consentGranted.style.display = 'none';
+        
+        // Hide ALL dashboard sections
         if (welcomeSection) welcomeSection.style.display = 'none';
         const insightsSection = document.getElementById('insightsSection');
         const planSection = document.getElementById('planSection');
         const offersSection = document.getElementById('offersSection');
         const dataInfoSection = document.getElementById('dataInfoSection');
+        const subscriptionsSection = document.getElementById('subscriptionsSection');
+        const transactionsSection = document.getElementById('transactionsSection');
+        const aiConsentSection = document.getElementById('aiConsentSection');
+        const aiPlanSection = document.getElementById('aiPlanSection');
+        
         if (insightsSection) insightsSection.style.display = 'none';
         if (planSection) planSection.style.display = 'none';
         if (offersSection) offersSection.style.display = 'none';
         if (dataInfoSection) dataInfoSection.style.display = 'none';
+        if (subscriptionsSection) subscriptionsSection.style.display = 'none';
+        if (transactionsSection) transactionsSection.style.display = 'none';
+        if (aiConsentSection) aiConsentSection.style.display = 'none';
+        if (aiPlanSection) aiPlanSection.style.display = 'none';
         
         // Store userId for consent function
         window.currentUserId = userId;
@@ -83,8 +125,20 @@ async function loadUserData() {
     await loadFullDashboard(userId);
         
     } catch (error) {
+        // Hide loading indicator
+        const loadingDiv = document.getElementById('loadingIndicator');
+        if (loadingDiv) loadingDiv.style.display = 'none';
+        
+        // Show error message
         showError(`Error loading user data: ${error.message}`);
         console.error('Error:', error);
+        
+        // Hide all sections on error
+        const sections = ['consentSection', 'welcomeSection', 'insightsSection', 'planSection', 'offersSection', 'dataInfoSection', 'subscriptionsSection', 'transactionsSection', 'aiConsentSection', 'aiPlanSection'];
+        sections.forEach(id => {
+            const section = document.getElementById(id);
+            if (section) section.style.display = 'none';
+        });
     }
 }
 
@@ -163,40 +217,38 @@ async function loadFullDashboard(userId) {
         if (transactionsSection) transactionsSection.style.display = 'block';
         if (dataInfoSection) dataInfoSection.style.display = 'block';
         
-        // Ensure AI consent section is visible if regular consent is granted
-        // Check regular consent status and show AI consent section with proper inner divs
+        // AI consent section: Hidden by default to save tokens
+        // Only show if user has already enabled AI, or show button to enable it
         try {
-            const consentCheckResponse = await fetch(`${API_BASE_URL}/users/consent/${userId}`);
-            if (consentCheckResponse.ok) {
-                const consentCheckData = await consentCheckResponse.json();
-                if (consentCheckData.consent_status === true) {
-                    // Regular consent is granted, show AI consent section
+            const aiConsentResponse = await fetch(`${API_BASE_URL}/users/${userId}/ai-consent`);
+            if (aiConsentResponse.ok) {
+                const aiConsentData = await aiConsentResponse.json();
+                const aiConsentRequired = document.getElementById('aiConsentRequired');
+                const aiConsentGranted = document.getElementById('aiConsentGranted');
+                const showAIOptionsBtn = document.getElementById('showAIOptionsBtn');
+                
+                if (aiConsentData.ai_consent_status) {
+                    // AI is already enabled - show the AI section with "enabled" state
                     if (aiConsentSection) {
-                        // Check AI consent status to show correct inner div
-                        const aiConsentResponse = await fetch(`${API_BASE_URL}/users/${userId}/ai-consent`);
-                        if (aiConsentResponse.ok) {
-                            const aiConsentData = await aiConsentResponse.json();
-                            const aiConsentRequired = document.getElementById('aiConsentRequired');
-                            const aiConsentGranted = document.getElementById('aiConsentGranted');
-                            
-                            // Show the section
-                            aiConsentSection.style.display = 'block';
-                            
-                            // Show the correct inner div based on AI consent status
-                            if (aiConsentData.ai_consent_status) {
-                                if (aiConsentRequired) aiConsentRequired.style.display = 'none';
-                                if (aiConsentGranted) aiConsentGranted.style.display = 'block';
-                            } else {
-                                if (aiConsentRequired) aiConsentRequired.style.display = 'block';
-                                if (aiConsentGranted) aiConsentGranted.style.display = 'none';
-                            }
-                            console.log('AI consent section displayed with correct inner div');
-                        }
+                        aiConsentSection.style.display = 'block';
+                        if (aiConsentRequired) aiConsentRequired.style.display = 'none';
+                        if (aiConsentGranted) aiConsentGranted.style.display = 'block';
                     }
+                    // Hide the "Enable AI" button since it's already enabled
+                    if (showAIOptionsBtn) showAIOptionsBtn.style.display = 'none';
+                } else {
+                    // AI not enabled - hide AI section by default, show button to enable
+                    if (aiConsentSection) aiConsentSection.style.display = 'none';
+                    // Show "Enable AI Recommendations" button in plan section
+                    if (showAIOptionsBtn) showAIOptionsBtn.style.display = 'block';
                 }
             }
         } catch (error) {
-            console.warn('Error checking consent for AI section display:', error);
+            console.warn('Error checking AI consent status:', error);
+            // On error, hide AI section and show enable button
+            if (aiConsentSection) aiConsentSection.style.display = 'none';
+            const showAIOptionsBtn = document.getElementById('showAIOptionsBtn');
+            if (showAIOptionsBtn) showAIOptionsBtn.style.display = 'block';
         }
         
         // AI plan section is handled by loadAIPlan if AI was used
@@ -555,6 +607,23 @@ async function checkAIConsent(userId) {
     } catch (error) {
         console.error('Error checking AI consent:', error);
         return false;
+    }
+}
+
+// Show AI consent section when user clicks "Enable AI Recommendations" button
+function showAIConsentSection() {
+    const aiConsentSection = document.getElementById('aiConsentSection');
+    const showAIOptionsBtn = document.getElementById('showAIOptionsBtn');
+    
+    if (aiConsentSection) {
+        // Show the AI consent section
+        aiConsentSection.style.display = 'block';
+        
+        // Scroll to the AI consent section
+        aiConsentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        // Hide the button since the section is now visible
+        if (showAIOptionsBtn) showAIOptionsBtn.style.display = 'none';
     }
 }
 

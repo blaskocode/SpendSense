@@ -30,12 +30,15 @@ class UserReviewer:
     
     def get_user_profile(
         self,
-        user_id: str
+        user_id: str,
+        use_cache: bool = False
     ) -> Dict[str, any]:
         """Get complete user profile for review.
         
         Args:
             user_id: User identifier
+            use_cache: If True, use cached signals if available (24-hour TTL).
+                       If False, always compute fresh signals. Default: False.
             
         Returns:
             Dictionary with complete user profile including:
@@ -59,8 +62,8 @@ class UserReviewer:
         signals_180d = None
         
         try:
-            signals_30d = self.aggregator.compute_signals(user_id, '30d', use_cache=True)
-            signals_180d = self.aggregator.compute_signals(user_id, '180d', use_cache=True)
+            signals_30d = self.aggregator.compute_signals(user_id, '30d', use_cache=use_cache)
+            signals_180d = self.aggregator.compute_signals(user_id, '180d', use_cache=use_cache)
         except Exception as e:
             logger.warning(f"Error computing signals for user {user_id}: {e}")
         

@@ -82,7 +82,12 @@
 
             <!-- Your Plan (Education) -->
             <div id="planSection" class="section" style="display: none;">
-                <h2>📚 Your Plan</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="margin: 0;">📚 Your Plan</h2>
+                    <button id="showAIOptionsBtn" onclick="showAIConsentSection()" class="ai-options-btn" style="display: none;">
+                        🤖 Enable AI Recommendations
+                    </button>
+                </div>
                 <div id="educationList" class="recommendations-list"></div>
             </div>
 

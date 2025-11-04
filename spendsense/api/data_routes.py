@@ -1,6 +1,6 @@
 """Data & analysis API routes"""
 
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from fastapi import APIRouter, HTTPException
 
 from ..storage.sqlite_manager import SQLiteManager
@@ -8,6 +8,7 @@ from ..operator.review import UserReviewer
 from ..recommend.engine import RecommendationEngine
 from ..ui.feedback import FeedbackCollector
 from ..utils.logger import setup_logger
+from ..utils.config import TODAY
 from .models import (
     BehavioralProfileResponse,
     RecommendationsResponse, RecommendationItem,
@@ -365,17 +366,17 @@ def get_subscriptions(user_id: str):
     try:
         cursor = db_manager.conn.cursor()
         
-        # Known subscription merchants
-        subscription_merchants = [
-            'Netflix', 'Spotify', 'Amazon Prime', 'Disney+', 'Hulu', 
-            'Apple Music', 'Gym Membership', 'Streaming Service', 
-            'Software Subscription', 'Newspaper', 'Annual Subscription', 
-            'Insurance Premium'
-        ]
+        # Get all subscription transactions using EXACT same logic as SubscriptionDetector:
+        # 1. Use same date range as TimeWindowPartitioner: [today-30, today-1] (EXCLUDE today)
+        # 2. EXCLUDE pending transactions (matching windowing exclude_pending=True)
+        # 3. Find ALL merchants with ≥3 transactions where span ≤90 days
+        # This ensures the count EXACTLY matches what users see in the Behavioral Insights section
         
-        # Get all subscription transactions
-        placeholders = ','.join(['?' for _ in subscription_merchants])
-        cursor.execute(f"""
+        # Calculate dates exactly like TimeWindowPartitioner.get_30_day_window()
+        end_date = TODAY - timedelta(days=1)      # Exclude today (matching windowing)
+        start_date = end_date - timedelta(days=29)  # 30 days total (inclusive)
+        
+        cursor.execute("""
             SELECT 
                 a.user_id,
                 t.merchant_name,
@@ -384,19 +385,26 @@ def get_subscriptions(user_id: str):
                 COUNT(*) as transaction_count,
                 AVG(ABS(t.amount)) as avg_amount,
                 MIN(t.date) as first_transaction,
-                MAX(t.date) as last_transaction
+                MAX(t.date) as last_transaction,
+                JULIANDAY(MAX(t.date)) - JULIANDAY(MIN(t.date)) as day_span
             FROM transactions t
             JOIN accounts a ON t.account_id = a.account_id
             WHERE a.user_id = ?
-              AND (t.category_detailed = 'Subscription'
-                   OR t.merchant_name IN ({placeholders}))
+              AND t.date >= ?  -- Start date: today-30 (matching windowing)
+              AND t.date <= ?  -- End date: today-1 (EXCLUDE today, matching windowing)
+              AND t.pending = 0  -- EXCLUDE pending transactions (matching windowing)
+              AND t.amount < 0  -- Only count negative transactions (debits/spending)
+              AND t.merchant_name IS NOT NULL  -- Must have a merchant name
             GROUP BY a.user_id, t.merchant_name
-            ORDER BY t.merchant_name
-        """, [user_id] + subscription_merchants)
+            HAVING COUNT(*) >= 3  -- Require ≥3 transactions in window
+               AND day_span <= 90  -- First to last transaction within 90-day window (matching SubscriptionDetector)
+            ORDER BY avg_amount DESC  -- Show most expensive subscriptions first
+        """, [user_id, start_date, end_date])
         
         subscriptions_data = cursor.fetchall()
         
         # Build subscription list
+        # All subscriptions returned from query are already active (filtered in SQL)
         subscriptions = []
         for row in subscriptions_data:
             subscriptions.append({
@@ -406,10 +414,10 @@ def get_subscriptions(user_id: str):
                 "transaction_count": row['transaction_count'],
                 "first_transaction": row['first_transaction'],
                 "last_transaction": row['last_transaction'],
-                "is_active": True  # Consider active if last transaction is within last 60 days
+                "is_active": True  # All subscriptions in this list are active (filtered in SQL)
             })
         
-        # Calculate total monthly cost
+        # Calculate total monthly cost for active subscriptions only
         total_monthly_cost = sum(sub['avg_monthly_cost'] for sub in subscriptions)
         
         return {

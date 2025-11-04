@@ -609,6 +609,29 @@ button:active {
     background: #c82333;
 }
 
+.ai-options-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.ai-options-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #5568d3 0%, #653a91 100%);
+}
+
+.ai-options-btn:active {
+    transform: translateY(0);
+}
+
 .ai-error-message {
     margin-top: 15px;
     padding: 12px;
