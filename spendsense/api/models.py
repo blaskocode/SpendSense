@@ -31,6 +31,13 @@ class ConsentResponse(BaseModel):
     consent_timestamp: Optional[datetime] = None
 
 
+class AIConsentResponse(BaseModel):
+    """AI consent status response"""
+    user_id: str
+    ai_consent_status: bool
+    ai_consent_granted_at: Optional[datetime] = None
+
+
 # Data & Analysis Models
 class BehavioralProfileResponse(BaseModel):
     """Response for behavioral profile"""
@@ -58,6 +65,10 @@ class RecommendationsResponse(BaseModel):
     user_id: str
     recommendations: List[RecommendationItem]
     total_count: int
+    ai_used: bool = False
+    ai_error_message: Optional[str] = None
+    ai_model: Optional[str] = None
+    ai_tokens_used: Optional[int] = None
 
 
 class FeedbackRequest(BaseModel):

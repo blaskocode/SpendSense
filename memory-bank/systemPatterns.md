@@ -160,6 +160,15 @@ Persona → Education Catalog → Partner Offers → Rationale Generator → Gua
 - **Pagination:** Transactions displayed in pages (20 per page) with navigation controls
 - **Expandable Details:** Transaction rows expand to show full details
 
+## LLM Integration Pattern (Planned)
+- **Opt-In Only:** AI features require explicit user consent (separate from data consent)
+- **Fallback Strategy:** Static catalog used when LLM fails/timeouts
+- **Structured Output:** JSON format for LLM responses (plan document + recommendations)
+- **Error Handling:** User-visible errors when LLM fails, but system continues with fallback
+- **Auditability:** Store AI-generated plans in database with metadata (model, tokens, timestamp)
+- **Prompt Engineering:** Persona-specific prompts with user data context
+- **Token Tracking:** Monitor API usage for cost management
+
 ## Code Organization Principles
 - **Single Responsibility:** Each module has one clear purpose
 - **Dependency Injection:** Database manager, parquet handler passed to components

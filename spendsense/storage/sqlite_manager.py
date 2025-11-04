@@ -48,9 +48,28 @@ class SQLiteManager:
                     created_at TIMESTAMP NOT NULL,
                     consent_status BOOLEAN DEFAULT FALSE,
                     consent_timestamp TIMESTAMP,
-                    last_updated TIMESTAMP NOT NULL
+                    last_updated TIMESTAMP NOT NULL,
+                    ai_consent_status BOOLEAN DEFAULT FALSE,
+                    ai_consent_granted_at TIMESTAMP,
+                    ai_consent_revoked_at TIMESTAMP
                 )
             """)
+            
+            # Add AI consent columns if they don't exist (for existing databases)
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN ai_consent_status BOOLEAN DEFAULT FALSE")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN ai_consent_granted_at TIMESTAMP")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN ai_consent_revoked_at TIMESTAMP")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
             
             # Accounts table
             cursor.execute("""
@@ -161,6 +180,21 @@ class SQLiteManager:
                 )
             """)
             
+            # AI Plans table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ai_plans (
+                    plan_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    persona_name TEXT NOT NULL,
+                    plan_document TEXT NOT NULL,
+                    recommendations TEXT NOT NULL,
+                    generated_at TIMESTAMP NOT NULL,
+                    model_used TEXT,
+                    tokens_used INTEGER,
+                    FOREIGN KEY (user_id) REFERENCES users(user_id)
+                )
+            """)
+            
             # Create indexes for performance
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(account_id, date)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)")
@@ -168,6 +202,7 @@ class SQLiteManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_signals_user_window ON signals(user_id, window_type)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_personas_user ON personas(user_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_recommendations_user ON recommendations(user_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_plans_user ON ai_plans(user_id)")
             
             conn.commit()
             logger.info("Database schema created successfully")
@@ -183,7 +218,7 @@ class SQLiteManager:
         cursor = conn.cursor()
         
         tables = [
-            'feedback', 'recommendations', 'personas', 'signals',
+            'ai_plans', 'feedback', 'recommendations', 'personas', 'signals',
             'liabilities', 'transactions', 'accounts', 'users'
         ]
         

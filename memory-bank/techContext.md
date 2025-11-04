@@ -31,9 +31,20 @@
   - Operator dashboard with tabs for analytics, approval queue, etc.
 - **Alternative:** Swagger UI also available for testing at `/docs`
 
+### LLM Integration (Planned) 📋
+- **Provider:** OpenAI GPT (GPT-4 or GPT-3.5-turbo)
+- **Status:** Plan created, ready for implementation
+- **Opt-In:** User must explicitly consent to AI features (separate from data consent)
+- **Dependency:** `openai>=1.0.0` (to be added to requirements.txt)
+- **Configuration:** API key, model selection, timeout, temperature via environment variables
+- **Features:**
+  - Generate complete personalized financial plan documents
+  - Generate personalized recommendations (education + offers)
+  - Fallback to static catalog on failure
+  - Error messaging with graceful degradation
+
 ### Optional Components
-- **LLM Integration:** OpenAI API or Anthropic Claude (optional enhancement)
-- **Local LLM:** Could use local models if needed
+- **Local LLM:** Could use local models (Ollama, etc.) as alternative in future
 
 ## Development Setup
 
@@ -56,6 +67,7 @@ pip install -r requirements.txt
 - `pytest>=7.4.0` - Testing framework
 - `pytest-cov>=4.1.0` - Test coverage
 - `synthetic-data` - Capital One synthetic data library (for data generation)
+- `openai>=1.0.0` - OpenAI API client (planned for LLM integration) 📋
 
 ## Project Structure
 

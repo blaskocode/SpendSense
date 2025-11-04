@@ -3,8 +3,9 @@
 ## Current Work Focus
 **Phases 1-9: Core Implementation - COMPLETED ✅**
 **Web UI Development - COMPLETED ✅**
+**LLM-Powered Personalized Financial Plans - PLANNED 📋**
 
-All 9 core phases of SpendSense are complete, and the web UI has been fully implemented. The system is production-ready with comprehensive testing, documentation, REST API, and user-facing web dashboards.
+All 9 core phases of SpendSense are complete, and the web UI has been fully implemented. The system is production-ready with comprehensive testing, documentation, REST API, and user-facing web dashboards. A plan has been created to integrate OpenAI GPT for generating personalized financial plans and recommendations with user opt-in.
 
 ## Recent Changes (Latest Session)
 
@@ -92,6 +93,42 @@ All 9 core phases of SpendSense are complete, and the web UI has been fully impl
 - **API server operational** ✅
 - **User testing tools available** ✅
 
+### Planned Enhancement: LLM-Powered Personalized Financial Plans 📋
+**Status:** Plan created, ready for implementation
+
+1. **OpenAI GPT Integration**
+   - User opt-in for AI features (separate from data consent)
+   - Generate complete personalized financial plan documents
+   - Generate personalized recommendations (5 education + 3 offers)
+   - Structured JSON output format for parsing
+
+2. **Key Components to Implement**
+   - AI consent management module (`spendsense/guardrails/ai_consent.py`)
+   - OpenAI integration module (`spendsense/recommend/llm_generator.py`)
+   - Prompt engineering (`spendsense/recommend/prompts.py`)
+   - Database schema updates (ai_consent_status, ai_plans table)
+   - API endpoints for AI consent and AI plan retrieval
+   - Frontend UI for AI consent toggle and AI-generated plan display
+
+3. **Design Decisions**
+   - AI usage is opt-in only (not default)
+   - Fallback to static catalog on LLM failure/timeout
+   - Error messages shown to user when LLM fails
+   - Store AI-generated plans for auditability
+   - Track token usage for cost monitoring
+
+4. **Implementation Phases**
+   - Phase 1: Database schema updates (ai_consent, ai_plans table)
+   - Phase 2: AI consent management
+   - Phase 3: OpenAI integration module
+   - Phase 4: Prompt engineering
+   - Phase 5: Recommendation engine integration with fallback
+   - Phase 6: API endpoint updates
+   - Phase 7: Frontend integration
+   - Phase 8: Configuration and environment setup
+   - Phase 9: Error handling and logging
+   - Phase 10: Testing
+
 ### Optional Enhancements
 1. **Phase 10: A/B Testing** (Optional)
    - A/B testing framework
@@ -124,6 +161,9 @@ All 9 core phases of SpendSense are complete, and the web UI has been fully impl
 - FastAPI for REST API (modern, fast, auto-docs)
 - Command-line + API testing tools (web UI optional)
 - 30+ tests provide comprehensive coverage
+- **LLM Integration:** OpenAI GPT for personalized plans (user opt-in only)
+- **AI Consent:** Separate consent mechanism for AI features (not default)
+- **Fallback Strategy:** Static catalog fallback on LLM failure with error messaging
 
 ## Current Considerations
 - System is production-ready but uses synthetic data

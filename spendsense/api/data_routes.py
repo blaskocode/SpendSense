@@ -56,10 +56,14 @@ def get_profile(user_id: str):
 
 
 @router.get("/recommendations/{user_id}", response_model=RecommendationsResponse)
-def get_recommendations(user_id: str):
+def get_recommendations(user_id: str, use_ai: bool = False):
     """Get recommendations for a user.
     
     If no recommendations exist, generates them automatically.
+    
+    Args:
+        user_id: User identifier
+        use_ai: Whether to use AI for generation (default: False)
     """
     db_manager = get_db()
     
@@ -67,12 +71,12 @@ def get_recommendations(user_id: str):
         recommendation_engine = RecommendationEngine(db_manager.conn)
         
         # Check if recommendations exist, if not, generate them
-        recommendations = recommendation_engine.get_recommendations(user_id)
+        stored_recommendations = recommendation_engine.get_recommendations(user_id)
         
-        if not recommendations:
-            # No recommendations found, generate them
-            logger.info(f"No recommendations found for {user_id}, generating new ones...")
-            recommendations = recommendation_engine.generate_and_save(user_id)
+        if not stored_recommendations or use_ai:
+            # No recommendations found or AI requested, generate them
+            logger.info(f"Generating recommendations for {user_id} (use_ai={use_ai})...")
+            recommendations, metadata = recommendation_engine.generate_and_save(user_id, use_ai=use_ai)
             
             # Convert Recommendation objects to dicts
             recommendations = [
@@ -81,12 +85,20 @@ def get_recommendations(user_id: str):
                     'persona_name': rec.persona_name,
                     'type': rec.type,
                     'title': rec.title,
+                    'description': getattr(rec, 'description', ''),
                     'rationale': rec.rationale,
                     'operator_status': rec.operator_status,
                     'generated_at': datetime.now().isoformat()
                 }
                 for rec in recommendations
             ]
+            
+            # Store metadata for response (will be added to response model later)
+            ai_metadata = metadata
+        else:
+            # Use stored recommendations
+            recommendations = stored_recommendations
+            ai_metadata = {"ai_used": False, "error_message": None}
         
         # Limit recommendations to PRD spec: 3-5 education, 1-3 offers
         education_items = [r for r in recommendations if r.get('type') == 'education']
@@ -148,10 +160,15 @@ def get_recommendations(user_id: str):
                 else:
                     generated_at = rec_generated
                 
+                # Get description from recommendation data if available (for AI-generated recommendations)
+                rec_description = ''
+                if isinstance(rec, dict) and 'description' in rec:
+                    rec_description = rec.get('description', '')
+                
                 items.append(RecommendationItem(
                     recommendation_id=rec_id,
                     title=rec_title,
-                    description='',  # Not stored in database
+                    description=rec_description,
                     type=rec_type,
                     rationale=rec_rationale,
                     persona_name=rec_persona,
@@ -166,11 +183,50 @@ def get_recommendations(user_id: str):
         return RecommendationsResponse(
             user_id=user_id,
             recommendations=items,
-            total_count=len(items)
+            total_count=len(items),
+            ai_used=ai_metadata.get("ai_used", False),
+            ai_error_message=ai_metadata.get("error_message"),
+            ai_model=ai_metadata.get("model"),
+            ai_tokens_used=ai_metadata.get("tokens_used")
         )
     
     except Exception as e:
         logger.error(f"Error getting recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db_manager.close()
+
+
+@router.get("/ai-plan/{user_id}")
+def get_ai_plan(user_id: str):
+    """Retrieve AI-generated plan for a user.
+    
+    Args:
+        user_id: User identifier
+        
+    Returns:
+        AI-generated plan document
+    """
+    db_manager = get_db()
+    
+    try:
+        from ..recommend.llm_generator import OpenAIGenerator
+        
+        llm_generator = OpenAIGenerator(db_manager.conn)
+        plan = llm_generator.get_ai_plan(user_id)
+        
+        if not plan:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No AI-generated plan found for user {user_id}"
+            )
+        
+        return plan
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting AI plan: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db_manager.close()

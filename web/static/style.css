@@ -562,6 +562,138 @@ button:active {
     border-radius: 6px;
 }
 
+/* AI Consent Styles */
+.ai-consent-card {
+    background: #f8f9fa;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.ai-consent-card h3 {
+    margin-top: 0;
+    color: #667eea;
+}
+
+.ai-consent-status {
+    margin-top: 15px;
+}
+
+.ai-consent-text {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+.ai-consent-btn {
+    padding: 12px 24px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.ai-consent-btn:hover {
+    background: #5568d3;
+}
+
+.ai-consent-btn.revoke {
+    background: #dc3545;
+}
+
+.ai-consent-btn.revoke:hover {
+    background: #c82333;
+}
+
+.ai-error-message {
+    margin-top: 15px;
+    padding: 12px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    color: #856404;
+}
+
+.ai-success-message {
+    margin-top: 15px;
+    padding: 12px;
+    background: #d4edda;
+    border: 1px solid #28a745;
+    border-radius: 6px;
+    color: #155724;
+}
+
+/* AI Plan Styles */
+.ai-plan-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ai-plan-summary {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.ai-plan-summary p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: #333;
+}
+
+.ai-plan-insights,
+.ai-plan-actions {
+    margin-bottom: 24px;
+}
+
+.ai-plan-insights h3,
+.ai-plan-actions h3 {
+    color: #667eea;
+    margin-bottom: 12px;
+}
+
+.ai-plan-insights ul,
+.ai-plan-actions ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.ai-plan-insights li,
+.ai-plan-actions li {
+    padding: 10px 0;
+    padding-left: 24px;
+    position: relative;
+    line-height: 1.6;
+}
+
+.ai-plan-insights li::before {
+    content: "💡";
+    position: absolute;
+    left: 0;
+}
+
+.ai-plan-actions li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.ai-plan-metadata {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e0e0;
+    color: #666;
+    font-size: 0.9em;
+}
+
 .loading {
     text-align: center;
     padding: 20px;

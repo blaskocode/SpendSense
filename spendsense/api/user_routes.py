@@ -5,13 +5,14 @@ from typing import List
 
 from ..storage.sqlite_manager import SQLiteManager
 from ..guardrails.consent import ConsentManager
+from ..guardrails.ai_consent import AIConsentManager
 from ..ingest.importer import DataImporter
 from ..storage.parquet_handler import ParquetHandler
 from ..utils.logger import setup_logger
 from .models import (
     CreateUserRequest, CreateUserResponse,
     ConsentRequest, ConsentResponse,
-    ErrorResponse
+    ErrorResponse, AIConsentResponse
 )
 
 logger = setup_logger(__name__)
@@ -180,6 +181,111 @@ def check_consent(user_id: str):
         raise
     except Exception as e:
         logger.error(f"Error checking consent: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db_manager.close()
+
+
+@router.post("/{user_id}/ai-consent", response_model=AIConsentResponse)
+def grant_ai_consent(user_id: str):
+    """Grant AI consent for a user."""
+    db_manager = get_db()
+    
+    try:
+        ai_consent_manager = AIConsentManager(db_manager.conn)
+        ai_consent_manager.grant_ai_consent(user_id)
+        
+        cursor = db_manager.conn.cursor()
+        cursor.execute("""
+            SELECT ai_consent_status, ai_consent_granted_at
+            FROM users
+            WHERE user_id = ?
+        """, (user_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+        
+        return AIConsentResponse(
+            user_id=user_id,
+            ai_consent_status=bool(result['ai_consent_status']),
+            ai_consent_granted_at=result['ai_consent_granted_at']
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error granting AI consent: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db_manager.close()
+
+
+@router.delete("/{user_id}/ai-consent", response_model=AIConsentResponse)
+def revoke_ai_consent(user_id: str):
+    """Revoke AI consent for a user."""
+    db_manager = get_db()
+    
+    try:
+        ai_consent_manager = AIConsentManager(db_manager.conn)
+        ai_consent_manager.revoke_ai_consent(user_id)
+        
+        cursor = db_manager.conn.cursor()
+        cursor.execute("""
+            SELECT ai_consent_status, ai_consent_revoked_at
+            FROM users
+            WHERE user_id = ?
+        """, (user_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+        
+        return AIConsentResponse(
+            user_id=user_id,
+            ai_consent_status=False,
+            ai_consent_granted_at=None
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error revoking AI consent: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db_manager.close()
+
+
+@router.get("/{user_id}/ai-consent", response_model=AIConsentResponse)
+def check_ai_consent(user_id: str):
+    """Check AI consent status for a user."""
+    db_manager = get_db()
+    
+    try:
+        ai_consent_manager = AIConsentManager(db_manager.conn)
+        has_ai_consent = ai_consent_manager.check_ai_consent(user_id)
+        
+        cursor = db_manager.conn.cursor()
+        cursor.execute("""
+            SELECT ai_consent_status, ai_consent_granted_at
+            FROM users
+            WHERE user_id = ?
+        """, (user_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+        
+        return AIConsentResponse(
+            user_id=user_id,
+            ai_consent_status=has_ai_consent,
+            ai_consent_granted_at=result['ai_consent_granted_at']
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking AI consent: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db_manager.close()

@@ -41,6 +41,31 @@
                 </div>
             </div>
 
+            <!-- AI Consent Section -->
+            <div id="aiConsentSection" class="section" style="display: none;">
+                <div class="ai-consent-card">
+                    <h3>🤖 AI-Powered Personalized Plans</h3>
+                    <p>Opt-in to use AI (OpenAI) for generating personalized financial plans and recommendations.</p>
+                    <div id="aiConsentStatus" class="ai-consent-status">
+                        <div id="aiConsentRequired" style="display: none;">
+                            <p class="ai-consent-text">AI consent is <strong>not enabled</strong>. Recommendations will use our standard catalog.</p>
+                            <button onclick="grantAIConsent()" class="ai-consent-btn">Enable AI Recommendations</button>
+                        </div>
+                        <div id="aiConsentGranted" style="display: none;">
+                            <p class="ai-consent-text">AI consent is <strong>enabled</strong>. You can request AI-generated plans.</p>
+                            <button onclick="revokeAIConsent()" class="ai-consent-btn revoke">Disable AI Recommendations</button>
+                        </div>
+                    </div>
+                    <div id="aiErrorMessage" class="ai-error-message" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- AI Plan Section (if AI-generated plan exists) -->
+            <div id="aiPlanSection" class="section" style="display: none;">
+                <h2>📋 Your AI-Generated Financial Plan</h2>
+                <div id="aiPlanContent" class="ai-plan-content"></div>
+            </div>
+
             <!-- Welcome Section -->
             <div id="welcomeSection" class="section" style="display: none;">
                 <div class="welcome-card">

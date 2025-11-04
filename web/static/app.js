@@ -76,6 +76,10 @@ async function loadUserData() {
     if (consentSection) consentSection.style.display = 'block';
     if (consentRequired) consentRequired.style.display = 'none';
     if (consentGranted) consentGranted.style.display = 'block';
+    
+    // Check AI consent status
+    await checkAIConsent(userId);
+    
     await loadFullDashboard(userId);
         
     } catch (error) {
@@ -94,12 +98,27 @@ async function loadFullDashboard(userId) {
         }
         const profile = await profileResponse.json();
 
-        // Load recommendations
-        const recommendationsResponse = await fetch(`${API_BASE_URL}/data/recommendations/${userId}`);
+        // Check AI consent status to determine if we should request AI recommendations
+        const aiConsentStatus = await checkAIConsent(userId);
+        const useAI = aiConsentStatus && document.getElementById('userId').value.trim() === userId;
+        
+        // Load recommendations (with AI if consented)
+        const recommendationsUrl = `${API_BASE_URL}/data/recommendations/${userId}${useAI ? '?use_ai=true' : ''}`;
+        const recommendationsResponse = await fetch(recommendationsUrl);
         if (!recommendationsResponse.ok) {
             throw new Error('Failed to load recommendations');
         }
         const recommendationsData = await recommendationsResponse.json();
+        
+        // Display AI error message if AI was requested but failed
+        if (useAI && recommendationsData.ai_error_message) {
+            displayAIErrorMessage(recommendationsData.ai_error_message);
+        }
+        
+        // Load AI plan if AI was used
+        if (recommendationsData.ai_used) {
+            await loadAIPlan(userId);
+        }
 
         // Display welcome section
         displayWelcome(profile);
@@ -133,6 +152,8 @@ async function loadFullDashboard(userId) {
         const subscriptionsSection = document.getElementById('subscriptionsSection');
         const transactionsSection = document.getElementById('transactionsSection');
         const dataInfoSection = document.getElementById('dataInfoSection');
+        const aiConsentSection = document.getElementById('aiConsentSection');
+        const aiPlanSection = document.getElementById('aiPlanSection');
         
         if (welcomeSection) welcomeSection.style.display = 'block';
         if (insightsSection) insightsSection.style.display = 'block';
@@ -141,6 +162,44 @@ async function loadFullDashboard(userId) {
         if (subscriptionsSection) subscriptionsSection.style.display = 'block';
         if (transactionsSection) transactionsSection.style.display = 'block';
         if (dataInfoSection) dataInfoSection.style.display = 'block';
+        
+        // Ensure AI consent section is visible if regular consent is granted
+        // Check regular consent status and show AI consent section with proper inner divs
+        try {
+            const consentCheckResponse = await fetch(`${API_BASE_URL}/users/consent/${userId}`);
+            if (consentCheckResponse.ok) {
+                const consentCheckData = await consentCheckResponse.json();
+                if (consentCheckData.consent_status === true) {
+                    // Regular consent is granted, show AI consent section
+                    if (aiConsentSection) {
+                        // Check AI consent status to show correct inner div
+                        const aiConsentResponse = await fetch(`${API_BASE_URL}/users/${userId}/ai-consent`);
+                        if (aiConsentResponse.ok) {
+                            const aiConsentData = await aiConsentResponse.json();
+                            const aiConsentRequired = document.getElementById('aiConsentRequired');
+                            const aiConsentGranted = document.getElementById('aiConsentGranted');
+                            
+                            // Show the section
+                            aiConsentSection.style.display = 'block';
+                            
+                            // Show the correct inner div based on AI consent status
+                            if (aiConsentData.ai_consent_status) {
+                                if (aiConsentRequired) aiConsentRequired.style.display = 'none';
+                                if (aiConsentGranted) aiConsentGranted.style.display = 'block';
+                            } else {
+                                if (aiConsentRequired) aiConsentRequired.style.display = 'block';
+                                if (aiConsentGranted) aiConsentGranted.style.display = 'none';
+                            }
+                            console.log('AI consent section displayed with correct inner div');
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Error checking consent for AI section display:', error);
+        }
+        
+        // AI plan section is handled by loadAIPlan if AI was used
         
     } catch (error) {
         showError(`Error loading dashboard: ${error.message}`);
@@ -442,6 +501,212 @@ async function revokeConsent() {
     } catch (error) {
         console.error('Error revoking consent:', error);
         alert('Error revoking consent. Please try again.');
+    }
+}
+
+// AI Consent Management
+async function checkAIConsent(userId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/ai-consent`);
+        if (!response.ok) {
+            console.warn('Failed to check AI consent status');
+            return false;
+        }
+        const data = await response.json();
+        
+        // Update UI - show AI consent section if regular consent is granted
+        const consentResponse = await fetch(`${API_BASE_URL}/users/consent/${userId}`);
+        const consentData = await consentResponse.json();
+        const hasRegularConsent = consentData.consent_status === true;
+        
+        const aiConsentSection = document.getElementById('aiConsentSection');
+        const aiConsentRequired = document.getElementById('aiConsentRequired');
+        const aiConsentGranted = document.getElementById('aiConsentGranted');
+        
+        // Show AI consent section if regular consent is granted (regardless of consent section visibility)
+        console.log('AI Consent Check:', {
+            hasRegularConsent,
+            aiConsentStatus: data.ai_consent_status,
+            aiConsentSectionExists: !!aiConsentSection
+        });
+        
+        if (aiConsentSection && hasRegularConsent) {
+            aiConsentSection.style.display = 'block';
+            console.log('AI consent section set to block');
+            
+            if (data.ai_consent_status) {
+                if (aiConsentRequired) aiConsentRequired.style.display = 'none';
+                if (aiConsentGranted) aiConsentGranted.style.display = 'block';
+            } else {
+                if (aiConsentRequired) aiConsentRequired.style.display = 'block';
+                if (aiConsentGranted) aiConsentGranted.style.display = 'none';
+            }
+        } else {
+            if (aiConsentSection) {
+                // Hide AI consent section if regular consent is not granted
+                aiConsentSection.style.display = 'none';
+                console.log('AI consent section hidden - no regular consent');
+            } else {
+                console.warn('AI consent section element not found in DOM');
+            }
+        }
+        
+        return data.ai_consent_status;
+    } catch (error) {
+        console.error('Error checking AI consent:', error);
+        return false;
+    }
+}
+
+async function grantAIConsent() {
+    const userId = document.getElementById('userId').value.trim();
+    if (!userId) {
+        alert('Please enter a user ID first');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/ai-consent`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to grant AI consent');
+        }
+        
+        // Refresh AI consent status
+        await checkAIConsent(userId);
+        
+        // Show success message
+        const aiErrorMessage = document.getElementById('aiErrorMessage');
+        if (aiErrorMessage) {
+            aiErrorMessage.textContent = 'AI consent granted successfully! Regenerating recommendations with AI...';
+            aiErrorMessage.className = 'ai-success-message';
+            aiErrorMessage.style.display = 'block';
+        }
+        
+        // Reload recommendations with AI enabled
+        await loadFullDashboard(userId);
+        
+        // Hide success message after reload
+        if (aiErrorMessage) {
+            setTimeout(() => {
+                aiErrorMessage.style.display = 'none';
+            }, 5000);
+        }
+    } catch (error) {
+        console.error('Error granting AI consent:', error);
+        alert(`Error granting AI consent: ${error.message}`);
+    }
+}
+
+async function revokeAIConsent() {
+    const userId = document.getElementById('userId').value.trim();
+    if (!userId) {
+        alert('Please enter a user ID first');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to disable AI recommendations? This will remove any AI-generated plans.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/ai-consent`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to revoke AI consent');
+        }
+        
+        // Refresh AI consent status
+        await checkAIConsent(userId);
+        
+        // Hide AI plan section
+        const aiPlanSection = document.getElementById('aiPlanSection');
+        if (aiPlanSection) aiPlanSection.style.display = 'none';
+        
+        // Reload recommendations without AI
+        await loadFullDashboard(userId);
+    } catch (error) {
+        console.error('Error revoking AI consent:', error);
+        alert(`Error revoking AI consent: ${error.message}`);
+    }
+}
+
+function displayAIErrorMessage(message) {
+    const aiErrorMessage = document.getElementById('aiErrorMessage');
+    if (aiErrorMessage) {
+        aiErrorMessage.textContent = `⚠️ ${message}`;
+        aiErrorMessage.className = 'ai-error-message';
+        aiErrorMessage.style.display = 'block';
+    }
+}
+
+async function loadAIPlan(userId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/data/ai-plan/${userId}`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                // No AI plan found, that's okay
+                return;
+            }
+            throw new Error('Failed to load AI plan');
+        }
+        const plan = await response.json();
+        
+        // Display AI plan
+        const aiPlanSection = document.getElementById('aiPlanSection');
+        const aiPlanContent = document.getElementById('aiPlanContent');
+        
+        if (aiPlanSection && aiPlanContent) {
+            aiPlanSection.style.display = 'block';
+            
+            let html = '';
+            
+            // Plan summary
+            if (plan.plan_document && plan.plan_document.plan_summary) {
+                html += `<div class="ai-plan-summary"><p>${escapeHtml(plan.plan_document.plan_summary)}</p></div>`;
+            }
+            
+            // Key insights
+            if (plan.plan_document && plan.plan_document.key_insights && plan.plan_document.key_insights.length > 0) {
+                html += '<div class="ai-plan-insights"><h3>Key Insights</h3><ul>';
+                plan.plan_document.key_insights.forEach(insight => {
+                    html += `<li>${escapeHtml(insight)}</li>`;
+                });
+                html += '</ul></div>';
+            }
+            
+            // Action items
+            if (plan.plan_document && plan.plan_document.action_items && plan.plan_document.action_items.length > 0) {
+                html += '<div class="ai-plan-actions"><h3>Action Items</h3><ul>';
+                plan.plan_document.action_items.forEach(action => {
+                    html += `<li>${escapeHtml(action)}</li>`;
+                });
+                html += '</ul></div>';
+            }
+            
+            // Metadata
+            if (plan.model_used || plan.tokens_used) {
+                html += '<div class="ai-plan-metadata"><small>';
+                if (plan.model_used) {
+                    html += `Generated using ${escapeHtml(plan.model_used)}`;
+                }
+                if (plan.tokens_used) {
+                    html += ` (${plan.tokens_used} tokens)`;
+                }
+                html += '</small></div>';
+            }
+            
+            aiPlanContent.innerHTML = html;
+        }
+    } catch (error) {
+        console.error('Error loading AI plan:', error);
+        // Don't show error to user, just log it
     }
 }
 
