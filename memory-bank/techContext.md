@@ -31,17 +31,38 @@
   - Operator dashboard with tabs for analytics, approval queue, etc.
 - **Alternative:** Swagger UI also available for testing at `/docs`
 
-### LLM Integration (Planned) 📋
-- **Provider:** OpenAI GPT (GPT-4 or GPT-3.5-turbo)
-- **Status:** Plan created, ready for implementation
-- **Opt-In:** User must explicitly consent to AI features (separate from data consent)
-- **Dependency:** `openai>=1.0.0` (to be added to requirements.txt)
-- **Configuration:** API key, model selection, timeout, temperature via environment variables
+### LLM Integration ✅ IMPLEMENTED
+- **Provider:** OpenAI GPT (GPT-4o-mini recommended, GPT-3.5-turbo, GPT-4o, or GPT-4)
+- **Status:** ✅ Fully implemented and operational
+- **Opt-In:** User must explicitly consent to AI features (separate from data consent) ✅
+- **Dependency:** `openai>=1.0.0` ✅ (added to requirements.txt)
+- **Configuration:** API key, model selection, timeout, temperature via environment variables (.env file) ✅
 - **Features:**
-  - Generate complete personalized financial plan documents
-  - Generate personalized recommendations (education + offers)
-  - Fallback to static catalog on failure
-  - Error messaging with graceful degradation
+  - ✅ Generate complete personalized financial plan documents (plan_summary, key_insights, action_items)
+  - ✅ Generate personalized recommendations (5 education + 3 offers) with descriptions
+  - ✅ Fallback to static catalog on failure ✅
+  - ✅ Error messaging with graceful degradation ✅
+  - ✅ AI consent management (grant/revoke/check endpoints)
+  - ✅ AI plan storage in database for auditability
+  - ✅ Token usage tracking
+  - ✅ Frontend UI for AI consent and AI plan display
+- **Recommended Settings:**
+  - Model: `gpt-4o-mini` (fastest, cheapest, 60% cheaper than GPT-3.5-turbo)
+  - Temperature: `0.3` (consistent, factual financial advice)
+  - Max Tokens: `4000` (sufficient for structured JSON responses)
+  - Timeout: `30` seconds
+- **Files:**
+  - `spendsense/guardrails/ai_consent.py` - AI consent management
+  - `spendsense/recommend/llm_generator.py` - OpenAI API integration
+  - `spendsense/recommend/prompts.py` - Prompt engineering
+  - `spendsense/recommend/models.py` - Recommendation data models
+  - `spendsense/recommend/engine.py` - Updated with AI integration
+  - `spendsense/api/user_routes.py` - AI consent endpoints
+  - `spendsense/api/data_routes.py` - AI plan retrieval endpoint
+  - `spendsense/api/models.py` - AI response models
+  - `web/static/app.js` - Frontend AI consent UI and plan display
+  - `web/static/index.html` - AI consent section and plan section
+  - `.env.example` - Configuration template
 
 ### Optional Components
 - **Local LLM:** Could use local models (Ollama, etc.) as alternative in future
@@ -67,7 +88,8 @@ pip install -r requirements.txt
 - `pytest>=7.4.0` - Testing framework
 - `pytest-cov>=4.1.0` - Test coverage
 - `synthetic-data` - Capital One synthetic data library (for data generation)
-- `openai>=1.0.0` - OpenAI API client (planned for LLM integration) 📋
+- `openai>=1.0.0` - OpenAI API client ✅ (implemented)
+- `python-dotenv>=1.0.0` - Environment variable loading from .env files ✅
 
 ## Project Structure
 
@@ -111,8 +133,13 @@ SpendSense/
 ## Configuration
 
 ### Environment Variables
-- `NUM_USERS` - Number of synthetic users to generate (default: 75)
+- `NUM_USERS` - Number of synthetic users to generate (default: 100)
 - `SEED` - Random seed for reproducibility (default: 42)
+- `OPENAI_API_KEY` - OpenAI API key (required for AI features)
+- `OPENAI_MODEL` - Model selection: gpt-4o-mini (recommended), gpt-3.5-turbo, gpt-4o, or gpt-4 (default: gpt-4o-mini)
+- `OPENAI_TEMPERATURE` - Temperature setting 0.0-2.0 (default: 0.3 for financial advice)
+- `OPENAI_MAX_TOKENS` - Maximum tokens in response (default: 4000)
+- `OPENAI_TIMEOUT` - Request timeout in seconds (default: 30)
 
 ### Configuration Files
 - `spendsense/utils/config.py` - Centralized configuration
@@ -121,7 +148,7 @@ SpendSense/
 ## Database Schema
 
 ### SQLite Tables
-1. **users** - User accounts with consent tracking
+1. **users** - User accounts with consent tracking (includes `ai_consent_status`, `ai_consent_granted_at`, `ai_consent_revoked_at`)
 2. **accounts** - Banking accounts (checking, savings, credit, etc.)
 3. **transactions** - All financial transactions
 4. **liabilities** - Credit card liabilities, loans
@@ -129,6 +156,7 @@ SpendSense/
 6. **personas** - Persona assignments with decision traces
 7. **recommendations** - Generated recommendations
 8. **feedback** - User feedback on recommendations
+9. **ai_plans** - AI-generated financial plans (plan_id, user_id, persona_name, plan_document, recommendations, generated_at, model_used, tokens_used)
 
 ### Indexes
 - `transactions(account_id, date)` - Query optimization
@@ -197,6 +225,9 @@ SpendSense/
 - ✅ Date filtering support for transaction queries
 - ✅ Transaction pagination support
 - ✅ Subscription aggregation endpoint
+- ✅ AI consent management endpoints (POST/DELETE/GET `/users/{user_id}/ai-consent`)
+- ✅ AI plan retrieval endpoint (GET `/data/ai-plan/{user_id}`)
+- ✅ Recommendations endpoint with `use_ai` parameter (GET `/data/recommendations/{user_id}?use_ai=true`)
 
 ## Testing Setup
 

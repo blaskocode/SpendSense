@@ -25,17 +25,24 @@ SpendSense addresses the gap between raw banking transaction data and actionable
 - **Problem:** Financial systems may discriminate based on demographics
 - **Solution:** Behavior-based analysis only, no demographic data, fairness metrics across income quartiles
 
+### 6. Generic Financial Advice
+- **Problem:** Static recommendations don't adapt to individual financial situations
+- **Solution:** AI-powered personalized financial plans (opt-in) with complete plan documents, insights, and action items tailored to specific user data
+
 ## How It Should Work
 
 ### User Journey
 1. **Data Ingestion:** System receives banking transaction data (synthetic for this project)
 2. **Consent:** User explicitly opts in to data processing and recommendations
-3. **Analysis:** System detects behavioral signals over 30-day and 180-day windows
-4. **Persona Assignment:** User is assigned to primary persona based on priority and signal strength
-5. **Recommendation Generation:** System generates 3-5 education items + 1-3 partner offers
-6. **Operator Review:** Recommendations go through approval queue (optional)
-7. **User View:** User sees insights in dashboard with clear rationales
-8. **Feedback:** User provides feedback on helpfulness and actions taken
+3. **AI Consent (Optional):** User can opt-in to AI-powered personalized plans (separate from data consent)
+4. **Analysis:** System detects behavioral signals over 30-day and 180-day windows
+5. **Persona Assignment:** User is assigned to primary persona based on priority and signal strength
+6. **Recommendation Generation:** 
+   - If AI consent granted: LLM generates complete personalized plan + recommendations (with fallback to static catalog on failure)
+   - Otherwise: Static catalog recommendations (3-5 education items + 1-3 partner offers)
+7. **Operator Review:** Recommendations go through approval queue (optional)
+8. **User View:** User sees insights in dashboard with clear rationales, plus AI-generated plan if available
+9. **Feedback:** User provides feedback on helpfulness and actions taken
 
 ### Key User Experience Goals
 - **Transparency:** Every recommendation includes a "because" statement citing specific data

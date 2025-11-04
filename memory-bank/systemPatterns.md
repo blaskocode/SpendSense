@@ -100,7 +100,9 @@ Signals → Persona Criteria Matcher → Prioritization Engine → Tie-Breaker �
 
 ### Recommendation Flow
 ```
-Persona → Education Catalog → Partner Offers → Rationale Generator → Guardrails → Output
+Persona → [AI Consent Check] → [If AI: LLM Generator → Plan Document + Recommendations] 
+         → [If No AI or AI Failed: Static Catalog] 
+         → Education Catalog → Partner Offers → Rationale Generator → Guardrails → Output
 ```
 
 ## Key Architectural Decisions
@@ -160,14 +162,18 @@ Persona → Education Catalog → Partner Offers → Rationale Generator → Gua
 - **Pagination:** Transactions displayed in pages (20 per page) with navigation controls
 - **Expandable Details:** Transaction rows expand to show full details
 
-## LLM Integration Pattern (Planned)
-- **Opt-In Only:** AI features require explicit user consent (separate from data consent)
-- **Fallback Strategy:** Static catalog used when LLM fails/timeouts
-- **Structured Output:** JSON format for LLM responses (plan document + recommendations)
-- **Error Handling:** User-visible errors when LLM fails, but system continues with fallback
-- **Auditability:** Store AI-generated plans in database with metadata (model, tokens, timestamp)
-- **Prompt Engineering:** Persona-specific prompts with user data context
-- **Token Tracking:** Monitor API usage for cost management
+## LLM Integration Pattern ✅ IMPLEMENTED
+- **Opt-In Only:** AI features require explicit user consent (separate from data consent) ✅
+- **Fallback Strategy:** Static catalog used when LLM fails/timeouts ✅
+- **Structured Output:** JSON format for LLM responses (plan document + recommendations) ✅
+- **Error Handling:** User-visible errors when LLM fails, but system continues with fallback ✅
+- **Auditability:** Store AI-generated plans in database with metadata (model, tokens, timestamp) ✅
+- **Prompt Engineering:** Persona-specific prompts with user data context ✅
+- **Token Tracking:** Monitor API usage for cost management ✅
+- **Model Selection:** GPT-4o-mini (recommended, cost-effective), GPT-3.5-turbo, GPT-4o, or GPT-4
+- **Temperature:** 0.3 (default) for consistent, factual financial advice
+- **Configuration:** Environment variables (.env file support with python-dotenv)
+- **Database Schema:** `ai_consent_status`, `ai_consent_granted_at`, `ai_consent_revoked_at` columns in users table; `ai_plans` table for storing generated plans
 
 ## Code Organization Principles
 - **Single Responsibility:** Each module has one clear purpose

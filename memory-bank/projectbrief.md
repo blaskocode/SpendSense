@@ -14,12 +14,14 @@ Transform raw banking transaction data into actionable, personalized financial i
 5. **Comprehensive guardrails** - Consent, eligibility, and tone validation at every step
 6. **Operator oversight** - Web-based dashboard for human review and approval
 7. **User-facing dashboard** - Clean web interface for users to view insights and provide feedback
+8. **AI-powered personalization** - Optional LLM-generated personalized financial plans and recommendations (user opt-in)
 
 ## Project Scope
 - **Deployment:** Local-only (no cloud dependencies)
-- **Data:** Synthetic dataset with 50-100 users
-- **Approach:** Modular, rules-based baseline with optional LLM enhancements
+- **Data:** Synthetic dataset with 100 users (default, configurable)
+- **Approach:** Modular, rules-based baseline with optional LLM enhancements (OpenAI GPT integration implemented)
 - **Interfaces:** REST API + web-based operator dashboard + user web dashboard
+- **AI Integration:** OpenAI GPT-4o-mini (recommended) for personalized financial plans (user opt-in only)
 
 ## Target Users
 - **End Users:** Individuals with banking accounts seeking financial insights

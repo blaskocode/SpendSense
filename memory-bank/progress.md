@@ -145,19 +145,26 @@
 ## What's Left to Build
 
 ### LLM-Powered Personalized Financial Plans ✅ COMPLETE
-**Status:** Implementation complete, ready for testing
+**Status:** ✅ Fully implemented and operational
 
 - ✅ Database schema updates (ai_consent_status columns, ai_plans table)
 - ✅ AI consent management module (grant/revoke/check)
 - ✅ AI consent API endpoints (POST/DELETE/GET /users/{user_id}/ai-consent)
-- ✅ OpenAI configuration (API key, model, timeout, etc.)
+- ✅ OpenAI configuration (API key, model, timeout, temperature via .env)
 - ✅ Prompt engineering for financial plan generation
 - ✅ OpenAI integration module (llm_generator.py)
+- ✅ Recommendation models module (models.py) - resolves circular imports
 - ✅ Recommendation engine integration with LLM and fallback
+- ✅ User data summary method for LLM prompts
+- ✅ Guardrails for AI-generated recommendations
 - ✅ API endpoint updates (use_ai parameter, AI plan retrieval)
-- ✅ Frontend AI consent UI (checkbox/toggle)
+- ✅ Frontend AI consent UI (enable/disable buttons)
 - ✅ Frontend AI plan display and error handling
 - ✅ OpenAI dependency added to requirements.txt
+- ✅ python-dotenv added for .env file support
+- ✅ .env.example file with comprehensive documentation
+- ✅ Database migration executed
+- ✅ Configuration defaults (gpt-4o-mini, temperature 0.3)
 - [ ] Unit tests for LLM generator (optional - can be added later)
 - [ ] Integration tests for AI recommendation flow (optional - can be added later)
 
@@ -168,6 +175,11 @@
 - ✅ Error messaging when LLM fails
 - ✅ AI plans stored in database for auditability
 - ✅ Token usage tracking
+- ✅ Frontend UI for AI consent management
+- ✅ AI-generated plan display section
+- ✅ Configuration via .env file
+- ✅ Multiple model support (gpt-4o-mini, gpt-3.5-turbo, gpt-4o, gpt-4)
+- ✅ Recommended settings for cost-effective operation
 
 ### Phase 10: A/B Testing (Optional)
 - [ ] A/B testing framework
