@@ -17,7 +17,7 @@ DB_DIR.mkdir(exist_ok=True)
 PARQUET_DIR.mkdir(exist_ok=True)
 
 # Data generation settings
-NUM_USERS = int(os.getenv("NUM_USERS", "75"))  # Default 75 users (between 50-100)
+NUM_USERS = int(os.getenv("NUM_USERS", "100"))  # Default 100 users
 SEED = int(os.getenv("SEED", "42"))  # Default seed for reproducibility
 
 # Date settings

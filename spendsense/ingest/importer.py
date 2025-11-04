@@ -4,7 +4,7 @@ import pandas as pd
 from typing import List
 from datetime import datetime
 
-from .data_generator import SyntheticDataGenerator, User, Account, Transaction, Liability
+from .capitalone_generator import CapitalOneDataGenerator, User, Account, Transaction, Liability
 from .validator import DataValidator
 from ..storage.sqlite_manager import SQLiteManager
 from ..storage.parquet_handler import ParquetHandler
@@ -25,8 +25,8 @@ class DataImporter:
         """Generate and import synthetic data"""
         logger.info("Starting synthetic data import")
         
-        # Generate data
-        generator = SyntheticDataGenerator(num_users=num_users, seed=seed)
+        # Generate data using Capital One synthetic-data library
+        generator = CapitalOneDataGenerator(num_users=num_users, seed=seed)
         users, accounts, transactions, liabilities = generator.generate_all()
         
         # Validate data
