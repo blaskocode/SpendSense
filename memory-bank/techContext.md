@@ -168,14 +168,16 @@ SpendSense/
 
 ## Data Generation
 
-### Synthetic Data Characteristics
+### Current Synthetic Data Characteristics (As of November 2025)
 - **Users:** 100 (default, configurable via NUM_USERS)
+- **Accounts:** 263 across all users
+- **Transactions:** 31,846 total transactions
 - **Data Library:** Capital One `synthetic-data` library for statistically robust generation
 - **Income Distribution:** 4 quartiles (Q1: $20-40k, Q2: $40-65k, Q3: $65-100k, Q4: $100-200k)
 - **Account Types:** Checking, Savings, Credit Card, Money Market, HSA
 - **Transaction History:** 210 days (180 + 30 day buffer)
 - **Realistic Variability:** Subscriptions, seasonality, life events, edge cases
-- **Current Data:** 100 users, 263 accounts, 31,846 transactions
+- **Data Quality:** Validated and production-ready
 
 ### Reproducibility
 - Deterministic random seed (default: 42)

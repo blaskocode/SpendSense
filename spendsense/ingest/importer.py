@@ -5,6 +5,7 @@ from typing import List
 from datetime import datetime
 
 from .capitalone_generator import CapitalOneDataGenerator, User, Account, Transaction, Liability
+from .profile_generator import ProfileBasedGenerator
 from .validator import DataValidator
 from ..storage.sqlite_manager import SQLiteManager
 from ..storage.parquet_handler import ParquetHandler
@@ -21,12 +22,24 @@ class DataImporter:
         self.parquet_handler = parquet_handler
         self.validator = DataValidator()
     
-    def import_synthetic_data(self, num_users: int = None, seed: int = None):
-        """Generate and import synthetic data"""
+    def import_synthetic_data(self, num_users: int = None, seed: int = None, use_profiles: bool = True):
+        """Generate and import synthetic data
+        
+        Args:
+            num_users: Number of users to generate
+            seed: Random seed for reproducibility
+            use_profiles: If True, use profile-based generator (realistic). If False, use original generator.
+        """
         logger.info("Starting synthetic data import")
         
-        # Generate data using Capital One synthetic-data library
-        generator = CapitalOneDataGenerator(num_users=num_users, seed=seed)
+        # Generate data using profile-based generator (realistic) or original generator
+        if use_profiles:
+            logger.info("Using profile-based generator for realistic data")
+            generator = ProfileBasedGenerator(num_users=num_users, seed=seed)
+        else:
+            logger.info("Using Capital One synthetic-data library")
+            generator = CapitalOneDataGenerator(num_users=num_users, seed=seed)
+        
         users, accounts, transactions, liabilities = generator.generate_all()
         
         # Validate data
