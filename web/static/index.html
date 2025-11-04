@@ -67,10 +67,39 @@
                 <div id="offersList" class="recommendations-list"></div>
             </div>
 
+            <!-- Subscriptions -->
+            <div id="subscriptionsSection" class="section" style="display: none;">
+                <h2>📱 Active Subscriptions</h2>
+                <div id="subscriptionsContainer">
+                    <div id="subscriptionsSummary" class="subscriptions-summary"></div>
+                    <div id="subscriptionsList" class="subscriptions-list"></div>
+                </div>
+            </div>
+
             <!-- Transactions -->
             <div id="transactionsSection" class="section" style="display: none;">
                 <h2>💰 Recent Transactions</h2>
                 <div id="transactionsContainer">
+                    <div class="search-container">
+                        <div class="date-range-container">
+                            <label for="startDate">From:</label>
+                            <input type="date" id="startDate" class="date-input" onchange="updateTransactionDateRange()" />
+                            <label for="endDate">To:</label>
+                            <input type="date" id="endDate" class="date-input" onchange="updateTransactionDateRange()" />
+                            <button id="resetDateRangeBtn" class="reset-date-btn" onclick="resetTransactionDateRange()">Reset to 6 Months</button>
+                        </div>
+                        <div class="search-input-container">
+                            <input 
+                                type="text" 
+                                id="transactionSearch" 
+                                class="search-input" 
+                                placeholder="Search transactions by merchant, category, amount, account..."
+                                oninput="filterTransactions()"
+                            />
+                            <button id="clearSearchBtn" class="clear-search-btn" onclick="clearTransactionSearch()" style="display: none;">Clear</button>
+                            <span id="searchResultsCount" class="search-results-count" style="display: none;"></span>
+                        </div>
+                    </div>
                     <div id="transactionsList" class="transactions-list"></div>
                     <div id="transactionsPagination" class="pagination" style="display: none;">
                         <button id="prevPageBtn" onclick="loadTransactions('prev')" disabled>← Previous</button>

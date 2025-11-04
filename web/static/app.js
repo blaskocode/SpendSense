@@ -110,7 +110,16 @@ async function loadFullDashboard(userId) {
         // Display recommendations
         displayRecommendations(recommendationsData);
         
-        // Load and display transactions
+        // Load and display subscriptions
+        await loadSubscriptions();
+        
+        // Initialize date range
+        initializeTransactionDateRange();
+        
+        // Load all transactions in date range for search capability
+        await loadAllTransactionsInRange();
+        
+        // Load and display paginated transactions
         await loadTransactions('initial');
         
         // Display data info
@@ -121,13 +130,15 @@ async function loadFullDashboard(userId) {
         const insightsSection = document.getElementById('insightsSection');
         const planSection = document.getElementById('planSection');
         const offersSection = document.getElementById('offersSection');
+        const subscriptionsSection = document.getElementById('subscriptionsSection');
+        const transactionsSection = document.getElementById('transactionsSection');
         const dataInfoSection = document.getElementById('dataInfoSection');
         
         if (welcomeSection) welcomeSection.style.display = 'block';
         if (insightsSection) insightsSection.style.display = 'block';
         if (planSection) planSection.style.display = 'block';
         if (offersSection) offersSection.style.display = 'block';
-        const transactionsSection = document.getElementById('transactionsSection');
+        if (subscriptionsSection) subscriptionsSection.style.display = 'block';
         if (transactionsSection) transactionsSection.style.display = 'block';
         if (dataInfoSection) dataInfoSection.style.display = 'block';
         
@@ -398,20 +409,22 @@ async function revokeConsent() {
             if (consentRequired) consentRequired.style.display = 'block';
             if (consentGranted) consentGranted.style.display = 'none';
             
-            // Hide dashboard sections
-            const welcomeSection = document.getElementById('welcomeSection');
-            const insightsSection = document.getElementById('insightsSection');
-            const planSection = document.getElementById('planSection');
-            const offersSection = document.getElementById('offersSection');
-            const transactionsSection = document.getElementById('transactionsSection');
-            const dataInfoSection = document.getElementById('dataInfoSection');
-            
-            if (welcomeSection) welcomeSection.style.display = 'none';
-            if (insightsSection) insightsSection.style.display = 'none';
-            if (planSection) planSection.style.display = 'none';
-            if (offersSection) offersSection.style.display = 'none';
-            if (transactionsSection) transactionsSection.style.display = 'none';
-            if (dataInfoSection) dataInfoSection.style.display = 'none';
+                   // Hide dashboard sections
+                   const welcomeSection = document.getElementById('welcomeSection');
+                   const insightsSection = document.getElementById('insightsSection');
+                   const planSection = document.getElementById('planSection');
+                   const offersSection = document.getElementById('offersSection');
+                   const subscriptionsSection = document.getElementById('subscriptionsSection');
+                   const transactionsSection = document.getElementById('transactionsSection');
+                   const dataInfoSection = document.getElementById('dataInfoSection');
+                   
+                   if (welcomeSection) welcomeSection.style.display = 'none';
+                   if (insightsSection) insightsSection.style.display = 'none';
+                   if (planSection) planSection.style.display = 'none';
+                   if (offersSection) offersSection.style.display = 'none';
+                   if (subscriptionsSection) subscriptionsSection.style.display = 'none';
+                   if (transactionsSection) transactionsSection.style.display = 'none';
+                   if (dataInfoSection) dataInfoSection.style.display = 'none';
             
             // Clear recommendation lists
             const educationList = document.getElementById('educationList');
@@ -435,13 +448,190 @@ async function revokeConsent() {
 // Transaction pagination state
 let currentTransactionPage = 0;
 const TRANSACTIONS_PER_PAGE = 20;
+let allTransactionsData = []; // Store all loaded transactions for filtering
+let filteredTransactions = []; // Store filtered transactions
+let transactionDateRange = {
+    startDate: null,
+    endDate: null
+}; // Date range for transaction search
 
 // Load transactions
+async function loadSubscriptions() {
+    const userId = document.getElementById('userId').value.trim();
+    if (!userId) return;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/data/subscriptions/${userId}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Subscriptions API error:', response.status, errorText);
+            throw new Error(`Failed to load subscriptions: ${response.status} - ${errorText}`);
+        }
+        const data = await response.json();
+        
+        displaySubscriptions(data);
+        
+    } catch (error) {
+        console.error('Error loading subscriptions:', error);
+        const subscriptionsList = document.getElementById('subscriptionsList');
+        if (subscriptionsList) {
+            subscriptionsList.innerHTML = '<p class="error-message">Error loading subscriptions. Please try again.</p>';
+        }
+    }
+}
+
+function displaySubscriptions(data) {
+    const subscriptionsSummary = document.getElementById('subscriptionsSummary');
+    const subscriptionsList = document.getElementById('subscriptionsList');
+    
+    if (!subscriptionsList) return;
+    
+    const subscriptions = data.subscriptions || [];
+    const totalCount = data.total_count || 0;
+    const totalMonthlyCost = data.total_monthly_cost || 0;
+    
+    // Display summary
+    if (subscriptionsSummary) {
+        subscriptionsSummary.innerHTML = `
+            <div class="summary-card">
+                <div class="summary-item">
+                    <span class="summary-label">Total Subscriptions:</span>
+                    <span class="summary-value">${totalCount}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Total Monthly Cost:</span>
+                    <span class="summary-value">$${totalMonthlyCost.toFixed(2)}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Estimated Annual Cost:</span>
+                    <span class="summary-value">$${(totalMonthlyCost * 12).toFixed(2)}</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (subscriptions.length === 0) {
+        subscriptionsList.innerHTML = '<p class="info-card">No active subscriptions found.</p>';
+        return;
+    }
+    
+    // Create subscriptions grid
+    let html = '<div class="subscriptions-grid">';
+    
+    subscriptions.forEach(sub => {
+        const firstDate = new Date(sub.first_transaction).toLocaleDateString();
+        const lastDate = new Date(sub.last_transaction).toLocaleDateString();
+        const duration = sub.transaction_count > 1 ? `${sub.transaction_count} payments` : '1 payment';
+        
+        html += `
+            <div class="subscription-card">
+                <div class="subscription-header">
+                    <h3 class="subscription-merchant">${escapeHtml(sub.merchant_name)}</h3>
+                    <span class="subscription-cost">$${sub.avg_monthly_cost.toFixed(2)}<span class="cost-period">/mo</span></span>
+                </div>
+                <div class="subscription-details">
+                    <div class="subscription-detail-item">
+                        <span class="detail-label">Category:</span>
+                        <span class="detail-value">${escapeHtml(sub.category)}</span>
+                    </div>
+                    <div class="subscription-detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value ${sub.is_active ? 'status-active' : 'status-inactive'}">
+                            ${sub.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
+                    <div class="subscription-detail-item">
+                        <span class="detail-label">Payments:</span>
+                        <span class="detail-value">${duration}</span>
+                    </div>
+                    <div class="subscription-detail-item">
+                        <span class="detail-label">First Payment:</span>
+                        <span class="detail-value">${firstDate}</span>
+                    </div>
+                    <div class="subscription-detail-item">
+                        <span class="detail-label">Last Payment:</span>
+                        <span class="detail-value">${lastDate}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    subscriptionsList.innerHTML = html;
+}
+
+// Update transaction date range
+function updateTransactionDateRange() {
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    if (startDateInput && endDateInput) {
+        transactionDateRange.startDate = startDateInput.value || null;
+        transactionDateRange.endDate = endDateInput.value || null;
+        
+        // Reload transactions with new date range
+        loadTransactions('initial');
+    }
+}
+
+// Reset date range to past 6 months
+function resetTransactionDateRange() {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 6);
+    
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.value = startDate.toISOString().split('T')[0];
+        endDateInput.value = endDate.toISOString().split('T')[0];
+        updateTransactionDateRange();
+    }
+}
+
+// Initialize date range to past 6 months
+function initializeTransactionDateRange() {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 6);
+    
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.value = startDate.toISOString().split('T')[0];
+        endDateInput.value = endDate.toISOString().split('T')[0];
+        transactionDateRange.startDate = startDateInput.value;
+        transactionDateRange.endDate = endDateInput.value;
+    }
+}
+
 async function loadTransactions(direction) {
     const userId = document.getElementById('userId').value.trim();
     if (!userId) return;
     
     try {
+        // Initialize date range if not set
+        if (!transactionDateRange.startDate || !transactionDateRange.endDate) {
+            initializeTransactionDateRange();
+        }
+        
+        // Check if there's an active search
+        const searchInput = document.getElementById('transactionSearch');
+        const hasSearch = searchInput && searchInput.value.trim();
+        
+        // If searching, load all transactions first, then filter
+        if (hasSearch) {
+            await loadAllTransactionsInRange();
+            filterTransactions();
+            return;
+        }
+        
+        // For normal paginated view, use pagination
+        const limit = TRANSACTIONS_PER_PAGE;
+        
         // Calculate offset based on direction
         if (direction === 'next') {
             currentTransactionPage++;
@@ -453,7 +643,18 @@ async function loadTransactions(direction) {
         
         const offset = currentTransactionPage * TRANSACTIONS_PER_PAGE;
         
-        const response = await fetch(`${API_BASE_URL}/data/transactions/${userId}?limit=${TRANSACTIONS_PER_PAGE}&offset=${offset}`);
+        // Build query parameters for paginated view
+        const params = new URLSearchParams();
+        params.append('limit', limit);
+        params.append('offset', offset);
+        if (transactionDateRange.startDate) {
+            params.append('start_date', transactionDateRange.startDate);
+        }
+        if (transactionDateRange.endDate) {
+            params.append('end_date', transactionDateRange.endDate);
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/data/transactions/${userId}?${params.toString()}`);
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Transactions API error:', response.status, errorText);
@@ -461,7 +662,18 @@ async function loadTransactions(direction) {
         }
         const data = await response.json();
         
-        displayTransactions(data);
+        // For paginated view, we still need to load all transactions for search capability
+        // But we'll do it in the background so search works immediately
+        // Don't overwrite allTransactionsData if we already have it loaded
+        if (allTransactionsData.length === 0) {
+            // Load all transactions in background for search
+            loadAllTransactionsInRange().catch(err => {
+                console.warn('Background load of all transactions failed:', err);
+            });
+        }
+        
+        // Display paginated results
+        displayTransactions(data, false);
         
     } catch (error) {
         console.error('Error loading transactions:', error);
@@ -472,8 +684,117 @@ async function loadTransactions(direction) {
     }
 }
 
+// Filter transactions based on search
+async function filterTransactions() {
+    const searchInput = document.getElementById('transactionSearch');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const resultsCount = document.getElementById('searchResultsCount');
+    
+    if (!searchInput) return;
+    
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    
+    // Show/hide clear button
+    if (clearBtn) {
+        clearBtn.style.display = searchTerm ? 'block' : 'none';
+    }
+    
+    if (!searchTerm) {
+        // No search term - reload transactions with pagination
+        loadTransactions('initial');
+        if (resultsCount) resultsCount.style.display = 'none';
+        return;
+    }
+    
+    // If we don't have all transactions loaded, load them first
+    // This ensures we search through ALL transactions in the date range
+    if (allTransactionsData.length === 0 || 
+        (allTransactionsData.length < TRANSACTIONS_PER_PAGE && !searchTerm)) {
+        // Load all transactions in date range for search
+        await loadAllTransactionsInRange();
+    }
+    
+    // Filter transactions - search across multiple fields
+    filteredTransactions = allTransactionsData.filter(txn => {
+        const searchableFields = [
+            txn.merchant_name || '',
+            txn.category || '',
+            txn.category_primary || '',
+            txn.category_detailed || '',
+            txn.account_name || '',
+            txn.account_type || '',
+            txn.account_subtype || '',
+            txn.payment_channel || '',
+            txn.transaction_id || '',
+            Math.abs(txn.amount).toString(),
+            txn.amount >= 0 ? 'credit deposit' : 'debit withdrawal'
+        ].join(' ').toLowerCase();
+        
+        return searchableFields.includes(searchTerm);
+    });
+    
+    // Display filtered results
+    displayTransactions({
+        transactions: filteredTransactions,
+        total_count: filteredTransactions.length
+    }, true);
+    
+    // Show results count
+    if (resultsCount) {
+        resultsCount.textContent = `${filteredTransactions.length} result${filteredTransactions.length !== 1 ? 's' : ''} found`;
+        resultsCount.style.display = 'block';
+    }
+}
+
+// Load ALL transactions in the current date range (for search)
+async function loadAllTransactionsInRange() {
+    const userId = document.getElementById('userId').value.trim();
+    if (!userId) return;
+    
+    try {
+        // Initialize date range if not set
+        if (!transactionDateRange.startDate || !transactionDateRange.endDate) {
+            initializeTransactionDateRange();
+        }
+        
+        // Build query parameters - load ALL transactions (limit=0)
+        const params = new URLSearchParams();
+        params.append('limit', '0'); // No limit - load all
+        if (transactionDateRange.startDate) {
+            params.append('start_date', transactionDateRange.startDate);
+        }
+        if (transactionDateRange.endDate) {
+            params.append('end_date', transactionDateRange.endDate);
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/data/transactions/${userId}?${params.toString()}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Transactions API error:', response.status, errorText);
+            throw new Error(`Failed to load transactions: ${response.status} - ${errorText}`);
+        }
+        const data = await response.json();
+        
+        // Store ALL transactions in date range for filtering
+        allTransactionsData = data.transactions || [];
+        filteredTransactions = [...allTransactionsData];
+        
+    } catch (error) {
+        console.error('Error loading all transactions:', error);
+    }
+}
+
+// Clear search
+function clearTransactionSearch() {
+    const searchInput = document.getElementById('transactionSearch');
+    if (searchInput) {
+        searchInput.value = '';
+        filterTransactions();
+    }
+}
+
 // Display transactions
-function displayTransactions(data) {
+function displayTransactions(data, isFiltered = false) {
     const transactionsList = document.getElementById('transactionsList');
     const pagination = document.getElementById('transactionsPagination');
     const prevBtn = document.getElementById('prevPageBtn');
@@ -484,16 +805,36 @@ function displayTransactions(data) {
     
     const transactions = data.transactions || [];
     const totalCount = data.total_count || 0;
-    const totalPages = Math.ceil(totalCount / TRANSACTIONS_PER_PAGE);
     
-    if (transactions.length === 0) {
-        transactionsList.innerHTML = '<p class="info-card">No transactions found.</p>';
+    // If filtered, show all results without pagination
+    // Otherwise, use pagination
+    let transactionsToShow = transactions;
+    let totalPages = 1;
+    
+    if (!isFiltered) {
+        // Apply pagination for non-filtered results
+        const startIndex = currentTransactionPage * TRANSACTIONS_PER_PAGE;
+        const endIndex = startIndex + TRANSACTIONS_PER_PAGE;
+        transactionsToShow = transactions.slice(startIndex, endIndex);
+        totalPages = Math.ceil(totalCount / TRANSACTIONS_PER_PAGE);
+    } else {
+        // Hide pagination when filtering
         if (pagination) pagination.style.display = 'none';
+    }
+    
+    if (transactionsToShow.length === 0) {
+        const searchInput = document.getElementById('transactionSearch');
+        const hasSearch = searchInput && searchInput.value.trim();
+        transactionsList.innerHTML = hasSearch 
+            ? '<p class="info-card">No transactions found matching your search.</p>'
+            : '<p class="info-card">No transactions found.</p>';
+        if (pagination && !isFiltered) pagination.style.display = 'none';
         return;
     }
     
     // Create transactions table
     let html = '<table class="transactions-table"><thead><tr>';
+    html += '<th style="width: 30px;"></th>'; // Expand/collapse icon
     html += '<th>Date</th>';
     html += '<th>Merchant</th>';
     html += '<th>Category</th>';
@@ -502,35 +843,91 @@ function displayTransactions(data) {
     html += '<th>Status</th>';
     html += '</tr></thead><tbody>';
     
-    transactions.forEach(txn => {
+    transactionsToShow.forEach((txn, index) => {
         const amount = txn.amount;
         const amountClass = amount >= 0 ? 'positive' : 'negative';
         const amountDisplay = amount >= 0 ? `+$${amount.toFixed(2)}` : `-$${Math.abs(amount).toFixed(2)}`;
-        const pendingBadge = txn.pending ? '<span class="pending-badge">Pending</span>' : '';
+        const pendingBadge = txn.pending ? '<span class="pending-badge">Pending</span>' : '<span class="settled-badge">Settled</span>';
+        const dateObj = new Date(txn.date);
+        const formattedDate = dateObj.toLocaleDateString();
+        const formattedTime = dateObj.toLocaleTimeString();
         
-        html += `<tr>`;
-        html += `<td>${new Date(txn.date).toLocaleDateString()}</td>`;
+        // Transaction details
+        const categoryDisplay = txn.category_detailed && txn.category_detailed !== txn.category_primary 
+            ? `${txn.category_primary || 'Uncategorized'} - ${txn.category_detailed}`
+            : (txn.category || 'Uncategorized');
+        
+        html += `<tr class="transaction-row" data-index="${index}" onclick="toggleTransactionDetails(${index})">`;
+        html += `<td class="expand-icon" id="icon-${index}">▶</td>`;
+        html += `<td>${formattedDate}</td>`;
         html += `<td>${escapeHtml(txn.merchant_name || 'Unknown')}</td>`;
         html += `<td>${escapeHtml(txn.category || 'Uncategorized')}</td>`;
         html += `<td class="amount ${amountClass}">${amountDisplay}</td>`;
         html += `<td>${escapeHtml(txn.account_name || txn.account_type || 'Unknown')}</td>`;
         html += `<td>${pendingBadge}</td>`;
         html += `</tr>`;
+        
+        // Details row (hidden by default)
+        html += `<tr class="transaction-details-row" id="details-${index}" style="display: none;">`;
+        html += `<td colspan="7">`;
+        html += `<div class="transaction-details">`;
+        html += `<div class="details-grid">`;
+        html += `<div class="detail-item"><span class="detail-label">Transaction ID:</span><span class="detail-value">${escapeHtml(txn.transaction_id)}</span></div>`;
+        html += `<div class="detail-item"><span class="detail-label">Date & Time:</span><span class="detail-value">${formattedDate} at ${formattedTime}</span></div>`;
+        html += `<div class="detail-item"><span class="detail-label">Merchant:</span><span class="detail-value">${escapeHtml(txn.merchant_name || 'Unknown')}</span></div>`;
+        if (txn.merchant_entity_id) {
+            html += `<div class="detail-item"><span class="detail-label">Merchant ID:</span><span class="detail-value">${escapeHtml(txn.merchant_entity_id)}</span></div>`;
+        }
+        html += `<div class="detail-item"><span class="detail-label">Category:</span><span class="detail-value">${escapeHtml(categoryDisplay)}</span></div>`;
+        html += `<div class="detail-item"><span class="detail-label">Amount:</span><span class="detail-value amount ${amountClass}">${amountDisplay}</span></div>`;
+        html += `<div class="detail-item"><span class="detail-label">Account:</span><span class="detail-value">${escapeHtml(txn.account_name || txn.account_type || 'Unknown')}</span></div>`;
+        html += `<div class="detail-item"><span class="detail-label">Account Type:</span><span class="detail-value">${escapeHtml(txn.account_type || 'Unknown')}</span></div>`;
+        if (txn.account_subtype) {
+            html += `<div class="detail-item"><span class="detail-label">Account Subtype:</span><span class="detail-value">${escapeHtml(txn.account_subtype)}</span></div>`;
+        }
+        html += `<div class="detail-item"><span class="detail-label">Payment Channel:</span><span class="detail-value">${escapeHtml(txn.payment_channel || 'Unknown')}</span></div>`;
+        html += `<div class="detail-item"><span class="detail-label">Status:</span><span class="detail-value">${txn.pending ? '<span class="status-pending">Pending</span>' : '<span class="status-settled">Settled</span>'}</span></div>`;
+        html += `<div class="detail-item"><span class="detail-label">Transaction Type:</span><span class="detail-value">${amount >= 0 ? '<span class="type-credit">Credit (Deposit)</span>' : '<span class="type-debit">Debit (Withdrawal)</span>'}</span></div>`;
+        html += `</div>`;
+        html += `</div>`;
+        html += `</td>`;
+        html += `</tr>`;
     });
     
     html += '</tbody></table>';
     transactionsList.innerHTML = html;
     
-    // Update pagination
-    if (pagination && totalPages > 1) {
+    // Store transaction data for toggle function
+    window.transactionsData = transactionsToShow;
+    
+    // Update pagination (only if not filtered)
+    if (!isFiltered && pagination && totalPages > 1) {
         pagination.style.display = 'flex';
         if (prevBtn) prevBtn.disabled = currentTransactionPage === 0;
         if (nextBtn) nextBtn.disabled = currentTransactionPage >= totalPages - 1;
         if (pageInfo) {
             pageInfo.textContent = `Page ${currentTransactionPage + 1} of ${totalPages} (${totalCount} total)`;
         }
-    } else if (pagination) {
+    } else if (pagination && !isFiltered) {
         pagination.style.display = 'none';
+    }
+}
+
+// Toggle transaction details
+function toggleTransactionDetails(index) {
+    const detailsRow = document.getElementById(`details-${index}`);
+    const icon = document.getElementById(`icon-${index}`);
+    
+    if (!detailsRow || !icon) return;
+    
+    if (detailsRow.style.display === 'none') {
+        detailsRow.style.display = 'table-row';
+        icon.textContent = '▼';
+        icon.classList.add('expanded');
+    } else {
+        detailsRow.style.display = 'none';
+        icon.textContent = '▶';
+        icon.classList.remove('expanded');
     }
 }
 

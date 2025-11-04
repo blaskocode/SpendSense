@@ -177,21 +177,23 @@ def get_recommendations(user_id: str):
 
 
 @router.get("/transactions/{user_id}")
-def get_transactions(user_id: str, limit: int = 50, offset: int = 0):
+def get_transactions(user_id: str, limit: int = 50, offset: int = 0, start_date: str = None, end_date: str = None):
     """Get transaction records for a user.
     
     Args:
         user_id: User identifier
-        limit: Maximum number of transactions to return (default: 50)
+        limit: Maximum number of transactions to return (default: 50, use 0 for no limit)
         offset: Number of transactions to skip for pagination (default: 0)
+        start_date: Start date for filtering (YYYY-MM-DD format, optional)
+        end_date: End date for filtering (YYYY-MM-DD format, optional)
     """
     db_manager = get_db()
     
     try:
         cursor = db_manager.conn.cursor()
         
-        # Get transactions for user through their accounts
-        cursor.execute("""
+        # Build query with optional date filtering
+        query = """
             SELECT 
                 t.transaction_id,
                 t.account_id,
@@ -200,25 +202,54 @@ def get_transactions(user_id: str, limit: int = 50, offset: int = 0):
                 t.date,
                 t.amount,
                 t.merchant_name,
+                t.merchant_entity_id,
                 COALESCE(t.category_primary, t.category_detailed, 'Uncategorized') as category,
+                t.category_primary,
+                t.category_detailed,
                 t.pending,
                 t.payment_channel
             FROM transactions t
             JOIN accounts a ON t.account_id = a.account_id
             WHERE a.user_id = ?
-            ORDER BY t.date DESC, t.transaction_id DESC
-            LIMIT ? OFFSET ?
-        """, (user_id, limit, offset))
+        """
+        params = [user_id]
+        
+        # Add date filtering if provided
+        if start_date:
+            query += " AND t.date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND t.date <= ?"
+            params.append(end_date)
+        
+        query += " ORDER BY t.date DESC, t.transaction_id DESC"
+        
+        # Add limit/offset if limit is specified and > 0
+        if limit and limit > 0:
+            query += " LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+        
+        cursor.execute(query, tuple(params))
         
         transactions = cursor.fetchall()
         
-        # Get total count for pagination
-        cursor.execute("""
+        # Get total count for pagination (with same date filters)
+        count_query = """
             SELECT COUNT(*) as count
             FROM transactions t
             JOIN accounts a ON t.account_id = a.account_id
             WHERE a.user_id = ?
-        """, (user_id,))
+        """
+        count_params = [user_id]
+        
+        if start_date:
+            count_query += " AND t.date >= ?"
+            count_params.append(start_date)
+        if end_date:
+            count_query += " AND t.date <= ?"
+            count_params.append(end_date)
+        
+        cursor.execute(count_query, tuple(count_params))
         total_count = cursor.fetchone()['count']
         
         # Build transaction list
@@ -243,7 +274,10 @@ def get_transactions(user_id: str, limit: int = 50, offset: int = 0):
                 "date": row['date'],
                 "amount": float(row['amount']),
                 "merchant_name": row['merchant_name'] or 'Unknown',
+                "merchant_entity_id": row['merchant_entity_id'] or None,
                 "category": row['category'] or 'Uncategorized',
+                "category_primary": row['category_primary'] or None,
+                "category_detailed": row['category_detailed'] or None,
                 "pending": bool(row['pending']),
                 "payment_channel": row['payment_channel'] or 'Unknown'
             })
@@ -258,6 +292,79 @@ def get_transactions(user_id: str, limit: int = 50, offset: int = 0):
     
     except Exception as e:
         logger.error(f"Error getting transactions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db_manager.close()
+
+
+@router.get("/subscriptions/{user_id}")
+def get_subscriptions(user_id: str):
+    """Get active subscriptions for a user.
+    
+    Args:
+        user_id: User identifier
+    """
+    db_manager = get_db()
+    
+    try:
+        cursor = db_manager.conn.cursor()
+        
+        # Known subscription merchants
+        subscription_merchants = [
+            'Netflix', 'Spotify', 'Amazon Prime', 'Disney+', 'Hulu', 
+            'Apple Music', 'Gym Membership', 'Streaming Service', 
+            'Software Subscription', 'Newspaper', 'Annual Subscription', 
+            'Insurance Premium'
+        ]
+        
+        # Get all subscription transactions
+        placeholders = ','.join(['?' for _ in subscription_merchants])
+        cursor.execute(f"""
+            SELECT 
+                a.user_id,
+                t.merchant_name,
+                t.category_primary,
+                t.category_detailed,
+                COUNT(*) as transaction_count,
+                AVG(ABS(t.amount)) as avg_amount,
+                MIN(t.date) as first_transaction,
+                MAX(t.date) as last_transaction
+            FROM transactions t
+            JOIN accounts a ON t.account_id = a.account_id
+            WHERE a.user_id = ?
+              AND (t.category_detailed = 'Subscription'
+                   OR t.merchant_name IN ({placeholders}))
+            GROUP BY a.user_id, t.merchant_name
+            ORDER BY t.merchant_name
+        """, [user_id] + subscription_merchants)
+        
+        subscriptions_data = cursor.fetchall()
+        
+        # Build subscription list
+        subscriptions = []
+        for row in subscriptions_data:
+            subscriptions.append({
+                "merchant_name": row['merchant_name'],
+                "category": row['category_primary'] or 'Entertainment',
+                "avg_monthly_cost": float(row['avg_amount']),
+                "transaction_count": row['transaction_count'],
+                "first_transaction": row['first_transaction'],
+                "last_transaction": row['last_transaction'],
+                "is_active": True  # Consider active if last transaction is within last 60 days
+            })
+        
+        # Calculate total monthly cost
+        total_monthly_cost = sum(sub['avg_monthly_cost'] for sub in subscriptions)
+        
+        return {
+            "user_id": user_id,
+            "subscriptions": subscriptions,
+            "total_count": len(subscriptions),
+            "total_monthly_cost": total_monthly_cost
+        }
+    
+    except Exception as e:
+        logger.error(f"Error getting subscriptions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db_manager.close()
