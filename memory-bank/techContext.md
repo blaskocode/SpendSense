@@ -9,11 +9,27 @@
 - **Analytics Storage:** Parquet (via PyArrow) ✅
 - **Data Processing:** Pandas, NumPy ✅
 
-### Frontend (Not Yet Implemented)
-- **Framework:** React or Vue.js (or static HTML+JS) - Optional
+### Frontend ✅ Implemented
+- **Framework:** Vanilla HTML, CSS, and JavaScript (no framework dependencies)
 - **Purpose:** User-facing dashboard and operator dashboard
-- **Status:** Backend API ready, frontend not built
-- **Alternative:** Swagger UI available for testing at `/docs`
+- **Status:** ✅ Fully implemented and operational
+- **Files:**
+  - `web/static/index.html` - User dashboard
+  - `web/static/app.js` - User dashboard logic
+  - `web/static/style.css` - User dashboard styles
+  - `web/static/operator.html` - Operator dashboard
+  - `web/static/operator.js` - Operator dashboard logic
+  - `web/static/operator.css` - Operator dashboard styles
+- **Features:**
+  - Consent management UI
+  - Personalized recommendations display
+  - Behavioral insights visualization
+  - Active subscriptions display with statistics
+  - Transaction records with pagination and search
+  - Date range filtering (default: past 6 months)
+  - Feedback collection
+  - Operator dashboard with tabs for analytics, approval queue, etc.
+- **Alternative:** Swagger UI also available for testing at `/docs`
 
 ### Optional Components
 - **LLM Integration:** OpenAI API or Anthropic Claude (optional enhancement)
@@ -39,6 +55,7 @@ pip install -r requirements.txt
 - `python-dateutil>=2.8.2` - Date utilities
 - `pytest>=7.4.0` - Testing framework
 - `pytest-cov>=4.1.0` - Test coverage
+- `synthetic-data` - Capital One synthetic data library (for data generation)
 
 ## Project Structure
 
@@ -112,16 +129,19 @@ SpendSense/
 ## Data Generation
 
 ### Synthetic Data Characteristics
-- **Users:** 50-100 (configurable)
+- **Users:** 100 (default, configurable via NUM_USERS)
+- **Data Library:** Capital One `synthetic-data` library for statistically robust generation
 - **Income Distribution:** 4 quartiles (Q1: $20-40k, Q2: $40-65k, Q3: $65-100k, Q4: $100-200k)
 - **Account Types:** Checking, Savings, Credit Card, Money Market, HSA
 - **Transaction History:** 210 days (180 + 30 day buffer)
 - **Realistic Variability:** Subscriptions, seasonality, life events, edge cases
+- **Current Data:** 100 users, 263 accounts, 31,846 transactions
 
 ### Reproducibility
 - Deterministic random seed (default: 42)
 - All randomness seeded for consistent results
 - Same seed produces identical data
+- Capital One library uses NumPy random generator for better statistical distribution
 
 ## Development Constraints
 
@@ -138,14 +158,18 @@ SpendSense/
 
 ## API Design ✅ Implemented
 
-### REST Endpoints Structure (18 endpoints)
+### REST Endpoints Structure (18+ endpoints)
 - `/users` - User management (POST, GET)
 - `/users/consent` - Consent operations (POST, DELETE, GET)
 - `/data/profile/{user_id}` - Behavioral profile (GET)
 - `/data/recommendations/{user_id}` - Recommendations (GET)
+- `/data/transactions/{user_id}` - Transaction records (GET) with date filtering
+- `/data/subscriptions/{user_id}` - Active subscriptions (GET)
 - `/data/feedback` - User feedback (POST)
 - `/operator/*` - Operator dashboard endpoints (6 endpoints)
 - `/eval/*` - Evaluation endpoints (3 endpoints)
+- `/` - User dashboard (serves index.html)
+- `/operator-dashboard` - Operator dashboard (serves operator.html)
 
 ### API Implementation
 - ✅ FastAPI framework with automatic OpenAPI docs
@@ -157,6 +181,10 @@ SpendSense/
 - ✅ Standard HTTP methods (GET, POST, DELETE)
 - ✅ Global error handling
 - ✅ CORS enabled for local development
+- ✅ Static file serving for web UI
+- ✅ Date filtering support for transaction queries
+- ✅ Transaction pagination support
+- ✅ Subscription aggregation endpoint
 
 ## Testing Setup
 

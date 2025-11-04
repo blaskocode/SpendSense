@@ -145,7 +145,20 @@ Persona → Education Catalog → Partner Offers → Rationale Generator → Gua
 - **Pydantic Models:** Type-safe request/response validation
 - **Swagger UI:** Interactive documentation at `/docs`
 - **Error Handling:** Global exception handler with JSON responses
-- **CORS Enabled:** For local development and future frontend integration
+- **CORS Enabled:** For local development and frontend integration ✅
+- **Static File Serving:** Serves web UI files from `web/static/` directory
+- **Date Filtering:** Transaction endpoints support `start_date` and `end_date` query parameters
+
+## Web UI Pattern
+- **Vanilla HTML/CSS/JavaScript:** No framework dependencies, simple and fast
+- **API Integration:** All UI interactions use REST API endpoints
+- **Auto-Detection:** `API_BASE_URL` uses `window.location.origin` for flexible deployment
+- **Client-Side Filtering:** Transaction search filters loaded data client-side for responsiveness
+- **Background Loading:** All transactions in date range loaded in background for instant search
+- **Date Range Management:** Default to past 6 months, user-adjustable with reset button
+- **Deduplication:** Recommendations deduplicated by title before display
+- **Pagination:** Transactions displayed in pages (20 per page) with navigation controls
+- **Expandable Details:** Transaction rows expand to show full details
 
 ## Code Organization Principles
 - **Single Responsibility:** Each module has one clear purpose
