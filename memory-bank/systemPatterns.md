@@ -85,7 +85,16 @@ Every recommendation includes:
 
 ### Data Generation Flow
 ```
-SyntheticDataGenerator → DataValidator → DataImporter → SQLiteManager → ParquetHandler
+ProfileBasedGenerator (default) → DataValidator → DataImporter → SQLiteManager → ParquetHandler
+     ↓
+PersonaProfiles (templates) → Profile Variations (20 per persona) → Transaction Generation
+     ↓
+Account-Appropriate Transactions (HSA only healthcare, no duplicate subscriptions)
+```
+
+**Alternative Flow (fallback):**
+```
+CapitalOneDataGenerator → DataValidator → DataImporter → SQLiteManager → ParquetHandler
 ```
 
 ### Signal Detection Flow
@@ -109,12 +118,17 @@ Persona → [AI Consent Check] → [If AI: LLM Generator → Plan Document + Rec
 
 1. **Local-Only Deployment:** SQLite instead of PostgreSQL (simplifies setup)
 2. **Synthetic Data:** No real Plaid integration (reproducibility, privacy)
-3. **Rules-Based Baseline:** Explainable logic over ML black boxes
-4. **Optional LLM:** Enhancement layer with static fallback
-5. **Rolling Windows:** Fairness for users joining at different times
-6. **Priority-Based Personas:** Safety-first approach (debt > stability > growth)
-7. **Behavior-Only Fairness:** No demographic data, income quartiles from payroll
-8. **All-or-Nothing Consent:** Simplicity over granularity
+3. **Profile-Based Generation:** Persona-driven realistic data (default since November 2025)
+   - Ensures account-appropriate transactions
+   - Prevents unrealistic patterns (e.g., Netflix from HSA)
+   - No duplicate subscriptions in same month
+   - Realistic recurring payment dates
+4. **Rules-Based Baseline:** Explainable logic over ML black boxes
+5. **Optional LLM:** Enhancement layer with static fallback
+6. **Rolling Windows:** Fairness for users joining at different times
+7. **Priority-Based Personas:** Safety-first approach (debt > stability > growth)
+8. **Behavior-Only Fairness:** No demographic data, income quartiles from payroll
+9. **All-or-Nothing Consent:** Simplicity over granularity
 
 ## Data Storage Patterns
 
@@ -183,4 +197,25 @@ Persona → [AI Consent Check] → [If AI: LLM Generator → Plan Document + Rec
 - **Configuration Externalization:** Environment variables for settings
 - **Logging Throughout:** All modules use structured logging
 - **Error Handling:** Custom exceptions with meaningful messages
+
+## Data Generation Patterns (Updated November 2025)
+
+### Profile-Based Generation Pattern
+1. **Profile Templates:** Base profiles defined in `persona_profiles.py`
+   - Each persona has 1-2 base templates
+   - Templates define: income, accounts, recurring payments, spending patterns
+2. **Variation Generation:** Creates 20 variations per persona
+   - Income varies within quartile
+   - Merchant names vary (e.g., "Electric Company" vs "Power Company")
+   - Amounts vary slightly (±5-10%)
+   - Dates vary with jitter (subscriptions stay fixed)
+3. **Transaction Generation:** From profiles to transactions
+   - Payroll deposits based on frequency
+   - Recurring payments on fixed days (rent 1st, subscriptions specific days)
+   - Variable spending distributed across date range
+   - Account-appropriate routing (HSA only healthcare)
+4. **Quality Assurance:**
+   - No duplicate subscriptions per user per month
+   - Account type validation (HSA transactions must be healthcare)
+   - Realistic payment dates and amounts
 

@@ -61,6 +61,7 @@ Project is organized into 10 phases:
 - LLM-powered personalized financial plans (OpenAI GPT integration) ✅
 - 30+ tests implemented
 - Comprehensive documentation complete
-- 100 users, 263 accounts, 31,846 transactions
+- **Profile-based data generation** (November 2025) - Realistic persona-driven transactions
+- 100 users (20 per persona), ~230 accounts, ~10,000+ realistic transactions
 - Latest evaluation: November 3, 2025
 

@@ -170,20 +170,43 @@ SpendSense/
 
 ### Current Synthetic Data Characteristics (As of November 2025)
 - **Users:** 100 (default, configurable via NUM_USERS)
-- **Accounts:** 263 across all users
-- **Transactions:** 31,846 total transactions
-- **Data Library:** Capital One `synthetic-data` library for statistically robust generation
+- **Distribution:** 20 users per persona (High Utilization, Variable Income, Credit Builder, Subscription-Heavy, Savings Builder)
+- **Accounts:** ~230 across all users (varies by persona)
+- **Transactions:** ~10,000+ transactions (realistic, persona-based patterns)
+- **Data Generation Method:** Profile-based generator (default) - `ProfileBasedGenerator`
+  - Uses persona profiles from `spendsense/ingest/persona_profiles.py`
+  - Generates realistic transaction patterns based on persona characteristics
+  - Account-appropriate transactions (HSA only for healthcare, etc.)
+  - No duplicate subscriptions (one per merchant per month)
+- **Fallback Method:** Capital One `synthetic-data` library (`CapitalOneDataGenerator`)
+  - Available via `use_profiles=False` in importer
+  - Statistically robust generation
 - **Income Distribution:** 4 quartiles (Q1: $20-40k, Q2: $40-65k, Q3: $65-100k, Q4: $100-200k)
 - **Account Types:** Checking, Savings, Credit Card, Money Market, HSA
 - **Transaction History:** 210 days (180 + 30 day buffer)
-- **Realistic Variability:** Subscriptions, seasonality, life events, edge cases
-- **Data Quality:** Validated and production-ready
+- **Realistic Patterns:** Fixed recurring payments, variable spending, persona-specific behaviors
+- **Data Quality:** Validated and production-ready, realistic transaction patterns
 
 ### Reproducibility
 - Deterministic random seed (default: 42)
 - All randomness seeded for consistent results
 - Same seed produces identical data
+- Profile-based generator uses hash-based seeding for variation reproducibility
 - Capital One library uses NumPy random generator for better statistical distribution
+
+### Profile-Based Generation (Default)
+- **File:** `spendsense/ingest/persona_profiles.py`
+  - Defines base profile templates for each persona
+  - Variation generator creates realistic user variations
+  - 20 users per persona (100 total)
+- **File:** `spendsense/ingest/profile_generator.py`
+  - Generates transactions from persona profiles
+  - Ensures account appropriateness
+  - Prevents duplicate subscriptions
+  - Creates realistic spending patterns
+- **Integration:** `spendsense/ingest/importer.py`
+  - Uses profile generator by default (`use_profiles=True`)
+  - Can switch to original generator with `use_profiles=False`
 
 ## Development Constraints
 

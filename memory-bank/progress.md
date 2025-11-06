@@ -11,27 +11,24 @@
 - ✅ Schema creation and management
 
 #### Data Generation
-- ✅ Synthetic data generator with realistic variability
-- ✅ 50-100 users with diverse income levels (4 quartiles)
+- ✅ **Profile-Based Generator** (NEW - November 2025) - Realistic persona-driven data
+  - ✅ 6 base profile templates (2 High Utilization, 1 each for others)
+  - ✅ Variation generator creates 20 users per persona (100 total)
+  - ✅ Account-appropriate transactions (HSA only for healthcare)
+  - ✅ No duplicate subscriptions (one per merchant per month)
+  - ✅ Fixed recurring payments (rent on 1st, subscriptions on specific days)
+  - ✅ Variable spending patterns (groceries, gas, restaurants)
+  - ✅ Persona-specific behaviors (high utilization, variable income, etc.)
+- ✅ Original synthetic data generator (Capital One library) - still available as fallback
+- ✅ 100 users with diverse income levels (4 quartiles, 20 per persona)
 - ✅ Multiple account types (checking, savings, credit card, money market, HSA)
 - ✅ Liability simulation (credit cards with APR, minimum payments, overdue status)
 - ✅ Subscription variability:
-  - ±1-2 day jitter on payment dates
-  - 10% cancellation rate
-  - 5% price change probability
-- ✅ Seasonal patterns:
-  - Holiday spending in December
-  - Tax refunds in April
-- ✅ Life events:
-  - Job changes (5% probability)
-  - Major purchases (3% probability)
-  - Medical expenses (10% probability)
-- ✅ Edge cases:
-  - Overdraft fees
-  - Refunds
-  - Pending transactions
+  - Fixed dates per merchant (no duplicates)
+  - Realistic jitter (±0-2 days for bills, 0 for subscriptions)
 - ✅ Payroll simulation:
   - Monthly, semi-monthly, biweekly frequencies
+  - Variable income patterns for Variable Income Budgeter persona
   - Realistic deposit dates
 
 #### Storage Systems

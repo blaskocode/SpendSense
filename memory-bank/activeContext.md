@@ -18,6 +18,12 @@ All 9 core phases of SpendSense are complete. The system is production-ready and
 ## Recent Changes
 
 ### Latest Activity (November 2025)
+- ✅ **Persona-Based Data Generation System** - COMPLETED ✅
+  - Created realistic persona profiles for all 5 personas
+  - Built profile-based generator with account-appropriate transactions
+  - Fixed data quality issues (no Netflix from HSA, no duplicate subscriptions)
+  - Scaled to 100 users (20 per persona) with realistic variations
+  - Integrated as default data generation method
 - ✅ System fully operational and tested
 - ✅ Latest evaluation run completed (November 3, 2025)
 - ✅ All 100 users processed with behavioral signals
@@ -98,6 +104,31 @@ All 9 core phases of SpendSense are complete. The system is production-ready and
    - ✅ Capital One synthetic-data library integration for more robust data generation
    - ✅ 100 users with realistic transaction patterns
    - ✅ Subscription detection and display
+
+### Persona-Based Data Generation - COMPLETED ✅ (November 2025)
+1. **Profile System Implementation**
+   - ✅ Created `persona_profiles.py` with 6 base profile templates
+   - ✅ Profile variation generator creates 20 users per persona (100 total)
+   - ✅ Realistic patterns: fixed rent dates (1st), subscription dates, spending frequencies
+   - ✅ Account-appropriate transaction rules (HSA only for healthcare)
+
+2. **Profile-Based Generator**
+   - ✅ Created `profile_generator.py` - generates transactions from persona profiles
+   - ✅ No duplicate subscriptions (one per merchant per month per user)
+   - ✅ Realistic payroll deposits based on frequency
+   - ✅ Variable spending patterns (groceries, gas, restaurants)
+   - ✅ Persona-specific behaviors (high utilization, variable income, etc.)
+
+3. **Data Quality Improvements**
+   - ✅ Fixed: No more Netflix payments from HSA accounts
+   - ✅ Fixed: No duplicate subscriptions in same month
+   - ✅ Fixed: Realistic recurring payment dates
+   - ✅ Fixed: Account-appropriate transaction routing
+
+4. **Integration**
+   - ✅ Updated `importer.py` to use profile generator by default
+   - ✅ Can fall back to original generator with `use_profiles=False`
+   - ✅ Seamless integration with existing data pipeline
 
 ### Previously Completed (All Phases 1-9)
 1. **User Testing Tools Created**
@@ -277,9 +308,15 @@ python run.py --start
 4. **Test Scripts:** `test_phase*.py`, `test_end_to_end.py`
 
 ### Current Data State
-- ✅ 100 synthetic users across 4 income quartiles
-- ✅ 263 bank accounts (checking, savings, credit, etc.)
-- ✅ 31,846 transactions over 210 days
+- ✅ 100 synthetic users across 4 income quartiles (20 per persona)
+- ✅ 230 bank accounts (checking, savings, credit, HSA, money market)
+- ✅ ~10,000+ transactions over 210 days (realistic, persona-based)
 - ✅ Latest evaluation: November 3, 2025
 - ✅ 10 users with full persona assignments and recommendations
+- ✅ **New:** Persona-based profiles ensure realistic transaction patterns
+
+### Data Generation Methods
+- **Default:** Profile-based generator (`ProfileBasedGenerator`) - realistic, persona-driven
+- **Fallback:** Capital One synthetic-data library (`CapitalOneDataGenerator`)
+- **Switch:** Set `use_profiles=False` in `importer.import_synthetic_data()` to use original
 
