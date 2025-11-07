@@ -92,6 +92,7 @@ class SQLiteManager:
                     transaction_id TEXT PRIMARY KEY,
                     account_id TEXT NOT NULL,
                     date DATE NOT NULL,
+                    timestamp TEXT,
                     amount REAL NOT NULL,
                     merchant_name TEXT,
                     merchant_entity_id TEXT,

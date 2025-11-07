@@ -19,19 +19,27 @@ from spendsense.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 
-def setup():
+def setup(use_improved: bool = False, use_profiles: bool = True):
     """Setup SpendSense: create database schema and generate synthetic data"""
     logger.info("Setting up SpendSense...")
     
     # Initialize database
     db_manager = SQLiteManager()
+    # Clear existing data before creating new schema
+    db_manager.drop_all_tables()
+    logger.info("Cleared existing database tables")
     db_manager.create_schema()
     logger.info("Database schema created")
     
     # Generate and import synthetic data
     parquet_handler = ParquetHandler()
     importer = DataImporter(db_manager, parquet_handler)
-    importer.import_synthetic_data(num_users=NUM_USERS, seed=SEED)
+    importer.import_synthetic_data(
+        num_users=NUM_USERS, 
+        seed=SEED,
+        use_profiles=use_profiles,
+        use_improved=use_improved
+    )
     
     logger.info("Setup completed successfully!")
     logger.info(f"Generated data for {NUM_USERS} users")
@@ -66,11 +74,28 @@ def main():
         action='store_true',
         help='Start API server'
     )
+    parser.add_argument(
+        '--use-improved',
+        action='store_true',
+        help='Use improved data generator (comprehensive features)'
+    )
+    parser.add_argument(
+        '--use-profiles',
+        action='store_true',
+        default=True,
+        help='Use profile-based generator (realistic persona-driven data). Default: True'
+    )
+    parser.add_argument(
+        '--no-profiles',
+        action='store_true',
+        help='Use Capital One synthetic-data library instead of profile-based generator'
+    )
     
     args = parser.parse_args()
     
     if args.setup:
-        setup()
+        use_profiles = not args.no_profiles if args.no_profiles else args.use_profiles
+        setup(use_improved=args.use_improved, use_profiles=use_profiles)
     elif args.start:
         start()
     else:

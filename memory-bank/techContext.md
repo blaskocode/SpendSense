@@ -25,8 +25,9 @@
   - Personalized recommendations display
   - Behavioral insights visualization
   - Active subscriptions display with statistics
-  - Transaction records with pagination and search
+  - Transaction records with pagination and search (20 transactions per page, full navigation)
   - Date range filtering (default: past 6 months)
+  - Timezone-aware transaction timestamps (displays correctly in user's local timezone)
   - Feedback collection
   - Operator dashboard with tabs for analytics, approval queue, etc.
 - **Alternative:** Swagger UI also available for testing at `/docs`
@@ -135,6 +136,7 @@ SpendSense/
 ### Environment Variables
 - `NUM_USERS` - Number of synthetic users to generate (default: 100)
 - `SEED` - Random seed for reproducibility (default: 42)
+- `DAYS_OF_HISTORY` - Number of days of transaction history to generate (default: 365 for full year)
 - `OPENAI_API_KEY` - OpenAI API key (required for AI features)
 - `OPENAI_MODEL` - Model selection: gpt-4o-mini (recommended), gpt-3.5-turbo, gpt-4o, or gpt-4 (default: gpt-4o-mini)
 - `OPENAI_TEMPERATURE` - Temperature setting 0.0-2.0 (default: 0.3 for financial advice)
@@ -150,7 +152,10 @@ SpendSense/
 ### SQLite Tables
 1. **users** - User accounts with consent tracking (includes `ai_consent_status`, `ai_consent_granted_at`, `ai_consent_revoked_at`)
 2. **accounts** - Banking accounts (checking, savings, credit, etc.)
-3. **transactions** - All financial transactions
+3. **transactions** - All financial transactions (includes `timestamp` field for timezone-aware datetime)
+   - `timestamp` field: ISO format timezone-aware datetime (e.g., "2025-08-01T07:00:00-05:00")
+   - Recurring transactions set to 7am US Central Time
+   - Non-recurring transactions set to midnight US Central Time
 4. **liabilities** - Credit card liabilities, loans
 5. **signals** - Cached behavioral signals
 6. **personas** - Persona assignments with decision traces
@@ -172,20 +177,33 @@ SpendSense/
 - **Users:** 100 (default, configurable via NUM_USERS)
 - **Distribution:** 20 users per persona (High Utilization, Variable Income, Credit Builder, Subscription-Heavy, Savings Builder)
 - **Accounts:** ~230 across all users (varies by persona)
-- **Transactions:** ~10,000+ transactions (realistic, persona-based patterns)
-- **Data Generation Method:** Profile-based generator (default) - `ProfileBasedGenerator`
-  - Uses persona profiles from `spendsense/ingest/persona_profiles.py`
-  - Generates realistic transaction patterns based on persona characteristics
-  - Account-appropriate transactions (HSA only for healthcare, etc.)
-  - No duplicate subscriptions (one per merchant per month)
-- **Fallback Method:** Capital One `synthetic-data` library (`CapitalOneDataGenerator`)
-  - Available via `use_profiles=False` in importer
-  - Statistically robust generation
+- **Transactions:** ~34,500+ transactions (realistic, persona-based patterns)
+- **Transaction History:** 365 days (full year) - configurable via DAYS_OF_HISTORY environment variable
+- **Data Generation Methods:**
+  - **Improved Generator** (recommended) - `ImprovedDataGenerator`
+    - Available via `use_improved=True` in importer
+    - Comprehensive features with proper duplicate prevention
+    - Recurring transactions set to 7am US Central Time
+    - Enhanced merchant deduplication
+    - Database automatically cleared before data generation
+  - **Profile-based generator** (default) - `ProfileBasedGenerator`
+    - Uses persona profiles from `spendsense/ingest/persona_profiles.py`
+    - Generates realistic transaction patterns based on persona characteristics
+    - Account-appropriate transactions (HSA only for healthcare, etc.)
+    - No duplicate subscriptions (one per merchant per month)
+  - **Fallback Method:** Capital One `synthetic-data` library (`CapitalOneDataGenerator`)
+    - Available via `use_profiles=False` in importer
+    - Statistically robust generation
+- **Transaction Timestamps:**
+  - All transactions include timezone-aware `timestamp` field
+  - Recurring transactions (subscriptions, bills): 7am US Central Time
+  - Non-recurring transactions: midnight US Central Time
+  - Timestamps stored in ISO format (e.g., "2025-08-01T07:00:00-05:00")
 - **Income Distribution:** 4 quartiles (Q1: $20-40k, Q2: $40-65k, Q3: $65-100k, Q4: $100-200k)
 - **Account Types:** Checking, Savings, Credit Card, Money Market, HSA
-- **Transaction History:** 210 days (180 + 30 day buffer)
+- **Transaction History:** 365 days (full year, configurable via DAYS_OF_HISTORY)
 - **Realistic Patterns:** Fixed recurring payments, variable spending, persona-specific behaviors
-- **Data Quality:** Validated and production-ready, realistic transaction patterns
+- **Data Quality:** Validated and production-ready, realistic transaction patterns, proper timezone handling
 
 ### Reproducibility
 - Deterministic random seed (default: 42)
@@ -228,7 +246,7 @@ SpendSense/
 - `/users/consent` - Consent operations (POST, DELETE, GET)
 - `/data/profile/{user_id}` - Behavioral profile (GET)
 - `/data/recommendations/{user_id}` - Recommendations (GET)
-- `/data/transactions/{user_id}` - Transaction records (GET) with date filtering
+- `/data/transactions/{user_id}` - Transaction records (GET) with date filtering and timestamp support
 - `/data/subscriptions/{user_id}` - Active subscriptions (GET)
 - `/data/feedback` - User feedback (POST)
 - `/operator/*` - Operator dashboard endpoints (6 endpoints)
@@ -298,7 +316,7 @@ python run.py --start  # Start API server ✅
 
 ### Single-Command Setup ✅
 - ✅ Creates database schema
-- ✅ Generates synthetic data (100 users, 31,846 transactions)
+- ✅ Generates synthetic data (100 users, ~34,500 transactions, full year of history)
 - ✅ Exports to Parquet
 - ✅ Starts REST API server on http://localhost:8000
 - ✅ Swagger UI available at http://localhost:8000/docs

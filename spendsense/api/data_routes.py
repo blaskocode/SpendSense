@@ -257,6 +257,7 @@ def get_transactions(user_id: str, limit: int = 50, offset: int = 0, start_date:
                 a.type as account_type,
                 a.subtype as account_subtype,
                 t.date,
+                t.timestamp,
                 t.amount,
                 t.merchant_name,
                 t.merchant_entity_id,
@@ -329,6 +330,7 @@ def get_transactions(user_id: str, limit: int = 50, offset: int = 0, start_date:
                 "account_subtype": account_subtype or None,
                 "account_name": account_name,
                 "date": row['date'],
+                "timestamp": row['timestamp'],  # Include timestamp for proper timezone handling
                 "amount": float(row['amount']),
                 "merchant_name": row['merchant_name'] or 'Unknown',
                 "merchant_entity_id": row['merchant_entity_id'] or None,

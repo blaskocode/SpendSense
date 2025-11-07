@@ -33,7 +33,7 @@ NUM_USERS = int(os.getenv("NUM_USERS", "100"))  # Default 100 users
 SEED = int(os.getenv("SEED", "42"))  # Default seed for reproducibility
 
 # Date settings
-DAYS_OF_HISTORY = 210  # 180 days + 30 days buffer for window calculations
+DAYS_OF_HISTORY = int(os.getenv("DAYS_OF_HISTORY", "365"))  # Full year of transaction history (365 days)
 TODAY = None  # Will be set to current date or test date
 
 def set_today(date: Optional[str] = None):

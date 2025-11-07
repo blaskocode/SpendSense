@@ -11,7 +11,14 @@
 - ✅ Schema creation and management
 
 #### Data Generation
-- ✅ **Profile-Based Generator** (NEW - November 2025) - Realistic persona-driven data
+- ✅ **Improved Generator** (NEW - November 6, 2025) - Comprehensive features
+  - ✅ Enhanced duplicate prevention with payment_months tracking
+  - ✅ Proper merchant deduplication across fixed expenses and subscriptions
+  - ✅ Database automatically cleared before data generation (prevents duplicate accumulation)
+  - ✅ Transaction timestamps with timezone support
+  - ✅ Recurring transactions set to 7am US Central Time
+  - ✅ All recurring payments occur once per month on consistent dates
+- ✅ **Profile-Based Generator** (November 2025) - Realistic persona-driven data
   - ✅ 6 base profile templates (2 High Utilization, 1 each for others)
   - ✅ Variation generator creates 20 users per persona (100 total)
   - ✅ Account-appropriate transactions (HSA only for healthcare)
@@ -26,6 +33,8 @@
 - ✅ Subscription variability:
   - Fixed dates per merchant (no duplicates)
   - Realistic jitter (±0-2 days for bills, 0 for subscriptions)
+- ✅ Transaction timestamps (timezone-aware, 7am Central for recurring transactions)
+- ✅ Full year of transaction history (365 days, configurable via DAYS_OF_HISTORY)
 - ✅ Payroll simulation:
   - Monthly, semi-monthly, biweekly frequencies
   - Variable income patterns for Variable Income Budgeter persona
@@ -33,9 +42,11 @@
 
 #### Storage Systems
 - ✅ SQLite for relational data
+- ✅ Transaction timestamps with timezone support (ISO format)
 - ✅ Parquet export for analytics
 - ✅ CSV/JSON ingestion interface
 - ✅ Data validation and integrity checks
+- ✅ Database schema includes timestamp field for proper timezone handling
 
 #### Setup Infrastructure
 - ✅ One-command setup script (`python run.py --setup`)
@@ -43,6 +54,17 @@
 - ✅ Requirements file with all dependencies
 - ✅ README with setup instructions
 - ✅ .gitignore for version control
+
+### Recent Fixes (November 6, 2025)
+- ✅ Fixed duplicate transaction bug (database now clears before inserting new data)
+- ✅ Added transaction timestamp support with timezone awareness
+- ✅ Fixed timezone conversion issues in frontend (now uses timestamp instead of date field)
+- ✅ Recurring transactions now display correctly with 7am Central Time timestamps
+- ✅ API updated to return timestamp field in transaction responses
+- ✅ Frontend JavaScript updated to parse and display timezone-aware timestamps
+- ✅ Updated to full year of data (365 days instead of 210 days)
+- ✅ Fixed transaction pagination bug (was slicing already-paginated API results)
+- ✅ Pagination now works correctly, allowing navigation through all transaction pages
 
 ### Code Quality
 - ✅ Modular structure with clear separation of concerns

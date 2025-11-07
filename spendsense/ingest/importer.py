@@ -4,8 +4,9 @@ import pandas as pd
 from typing import List
 from datetime import datetime
 
-from .capitalone_generator import CapitalOneDataGenerator, User, Account, Transaction, Liability
 from .profile_generator import ProfileBasedGenerator
+from .data_generator import User, Account, Transaction, Liability
+# Lazy import for CapitalOneDataGenerator (only needed if use_profiles=False)
 from .validator import DataValidator
 from ..storage.sqlite_manager import SQLiteManager
 from ..storage.parquet_handler import ParquetHandler
@@ -22,23 +23,36 @@ class DataImporter:
         self.parquet_handler = parquet_handler
         self.validator = DataValidator()
     
-    def import_synthetic_data(self, num_users: int = None, seed: int = None, use_profiles: bool = True):
+    def import_synthetic_data(self, num_users: int = None, seed: int = None, use_profiles: bool = True, use_improved: bool = False):
         """Generate and import synthetic data
         
         Args:
             num_users: Number of users to generate
             seed: Random seed for reproducibility
             use_profiles: If True, use profile-based generator (realistic). If False, use original generator.
+            use_improved: If True, use improved generator (comprehensive features). Overrides use_profiles.
         """
         logger.info("Starting synthetic data import")
         
-        # Generate data using profile-based generator (realistic) or original generator
-        if use_profiles:
+        # Generate data using improved, profile-based, or Capital One generator
+        if use_improved:
+            logger.info("Using improved generator with comprehensive features")
+            from .improved_generator import ImprovedDataGenerator
+            generator = ImprovedDataGenerator(num_users=num_users, seed=seed)
+        elif use_profiles:
             logger.info("Using profile-based generator for realistic data")
             generator = ProfileBasedGenerator(num_users=num_users, seed=seed)
         else:
             logger.info("Using Capital One synthetic-data library")
-            generator = CapitalOneDataGenerator(num_users=num_users, seed=seed)
+            # Lazy import - only import when needed
+            try:
+                from .capitalone_generator import CapitalOneDataGenerator
+                generator = CapitalOneDataGenerator(num_users=num_users, seed=seed)
+            except ImportError:
+                raise ImportError(
+                    "synthetic-data package is required when use_profiles=False. "
+                    "Install it with: pip install synthetic-data"
+                )
         
         users, accounts, transactions, liabilities = generator.generate_all()
         
@@ -114,16 +128,22 @@ class DataImporter:
         cursor = conn.cursor()
         
         for transaction in transactions:
+            # Convert timestamp to ISO format string if present
+            timestamp_str = None
+            if transaction.timestamp:
+                timestamp_str = transaction.timestamp.isoformat()
+            
             cursor.execute("""
                 INSERT OR REPLACE INTO transactions
-                (transaction_id, account_id, date, amount, merchant_name, 
+                (transaction_id, account_id, date, timestamp, amount, merchant_name, 
                  merchant_entity_id, payment_channel, category_primary, 
                  category_detailed, pending)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 transaction.transaction_id,
                 transaction.account_id,
                 transaction.date,
+                timestamp_str,
                 transaction.amount,
                 transaction.merchant_name,
                 transaction.merchant_entity_id,

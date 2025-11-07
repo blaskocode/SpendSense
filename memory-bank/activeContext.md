@@ -10,7 +10,7 @@ All 9 core phases of SpendSense are complete. The system is production-ready and
 - ✅ LLM-powered personalized financial plans (OpenAI GPT integration)
 - ✅ 30+ comprehensive tests
 - ✅ Full documentation suite
-- ✅ 100 users with realistic synthetic data (31,846 transactions)
+- ✅ 100 users with realistic synthetic data (34,581 transactions, full year of history)
 - ✅ Latest evaluation completed (November 3, 2025)
 
 **System is ready for:** Production deployment, user testing, optional enhancements.
@@ -18,6 +18,23 @@ All 9 core phases of SpendSense are complete. The system is production-ready and
 ## Recent Changes
 
 ### Latest Activity (November 2025)
+- ✅ **Full Year Data Generation & Pagination Fix** - COMPLETED ✅ (November 6, 2025)
+  - Updated `DAYS_OF_HISTORY` from 210 to 365 days for full year of transaction history
+  - Regenerated data: 100 users with 365 days of transactions (34,581 total transactions)
+  - Fixed transaction pagination bug in frontend (was slicing already-paginated API results)
+  - Pagination now works correctly, showing all pages of transactions
+- ✅ **Transaction Timestamp & Timezone Support** - COMPLETED ✅ (November 6, 2025)
+  - Added `timestamp` field to Transaction dataclass (timezone-aware datetime)
+  - Updated database schema to include `timestamp` column
+  - Set recurring transactions (subscriptions, bills) to 7am US Central Time
+  - Updated API to return timestamp field in transaction responses
+  - Updated frontend JavaScript to use timestamp instead of date field for proper timezone handling
+  - Fixed timezone conversion issues that caused transactions to display on wrong dates
+- ✅ **Improved Data Generator** - COMPLETED ✅
+  - Fixed duplicate recurring payment bug (database now clears before inserting new data)
+  - Enhanced duplicate prevention with payment_months tracking
+  - Improved subscription generation with proper merchant deduplication
+  - All recurring payments now occur once per month on consistent dates
 - ✅ **Persona-Based Data Generation System** - COMPLETED ✅
   - Created realistic persona profiles for all 5 personas
   - Built profile-based generator with account-appropriate transactions

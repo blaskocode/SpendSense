@@ -3,6 +3,7 @@
 import random
 import uuid
 from datetime import date, timedelta, datetime
+import pytz
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 
@@ -92,6 +93,7 @@ class Transaction:
     category_primary: Optional[str] = None
     category_detailed: Optional[str] = None
     pending: bool = False
+    timestamp: Optional[datetime] = None  # Timestamp for the transaction (timezone-aware)
 
 
 @dataclass
@@ -545,9 +547,18 @@ class SyntheticDataGenerator:
         self, account_id: str, date: date, amount: float,
         merchant_name: Optional[str] = None, category_primary: Optional[str] = None,
         category_detailed: Optional[str] = None, payment_channel: str = 'other',
-        pending: bool = False
+        pending: bool = False, timestamp: Optional[datetime] = None
     ) -> Transaction:
-        """Create a transaction object"""
+        """Create a transaction object
+        
+        Args:
+            timestamp: Optional datetime for the transaction. If None, defaults to midnight Central Time.
+        """
+        # If no timestamp provided, use midnight in Central Time
+        if timestamp is None:
+            central_tz = pytz.timezone('US/Central')
+            timestamp = central_tz.localize(datetime.combine(date, datetime.min.time()))
+        
         return Transaction(
             transaction_id=str(uuid.uuid4()),
             account_id=account_id,
@@ -558,6 +569,7 @@ class SyntheticDataGenerator:
             payment_channel=payment_channel,
             category_primary=category_primary,
             category_detailed=category_detailed,
-            pending=pending
+            pending=pending,
+            timestamp=timestamp
         )
 

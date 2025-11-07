@@ -1146,10 +1146,8 @@ function displayTransactions(data, isFiltered = false) {
     let totalPages = 1;
     
     if (!isFiltered) {
-        // Apply pagination for non-filtered results
-        const startIndex = currentTransactionPage * TRANSACTIONS_PER_PAGE;
-        const endIndex = startIndex + TRANSACTIONS_PER_PAGE;
-        transactionsToShow = transactions.slice(startIndex, endIndex);
+        // API already returns paginated results, so use them directly
+        transactionsToShow = transactions;
         totalPages = Math.ceil(totalCount / TRANSACTIONS_PER_PAGE);
     } else {
         // Hide pagination when filtering
@@ -1182,7 +1180,16 @@ function displayTransactions(data, isFiltered = false) {
         const amountClass = amount >= 0 ? 'positive' : 'negative';
         const amountDisplay = amount >= 0 ? `+$${amount.toFixed(2)}` : `-$${Math.abs(amount).toFixed(2)}`;
         const pendingBadge = txn.pending ? '<span class="pending-badge">Pending</span>' : '<span class="settled-badge">Settled</span>';
-        const dateObj = new Date(txn.date);
+        
+        // Use timestamp if available (timezone-aware), otherwise fall back to date
+        let dateObj;
+        if (txn.timestamp) {
+            // Parse ISO timestamp string (e.g., "2025-08-01T07:00:00-05:00")
+            dateObj = new Date(txn.timestamp);
+        } else {
+            // Fallback to date field (midnight local time)
+            dateObj = new Date(txn.date);
+        }
         const formattedDate = dateObj.toLocaleDateString();
         const formattedTime = dateObj.toLocaleTimeString();
         
